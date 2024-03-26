@@ -4,9 +4,6 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-resources/application.properties
-resources/base/Address
-resources/static/Emails
 
 ### STS ###
 .apt_generated
@@ -38,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+/src/main/resources/base/Address
+/src/main/resources/application.properties
+/src/main/resources/static/Emails
