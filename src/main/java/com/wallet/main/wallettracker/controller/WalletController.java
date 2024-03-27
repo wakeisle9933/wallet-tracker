@@ -27,7 +27,12 @@ public class WalletController {
 
   @GetMapping("/send-email")
   public void sendEmail() throws IOException, MessagingException {
-    walletService.sendEmail();
+    walletService.sendPeriodicEmail();
+  }
+
+  @GetMapping("/base-compare")
+  public void sendBaseCompareEmail() throws IOException, MessagingException {
+    walletService.sendCompareRemainBalance();
   }
 
 }

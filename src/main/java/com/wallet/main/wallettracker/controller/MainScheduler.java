@@ -15,7 +15,12 @@ public class MainScheduler {
 
   @Scheduled(cron = "0 0 10 * * ?")
   public void doPeriodicReporting() throws MessagingException, IOException {
-    walletService.sendEmail();
+    walletService.sendPeriodicEmail();
+  }
+
+  @Scheduled(cron = "0 0/10 * * * ?")
+  public void balanceChecking() throws IOException, MessagingException {
+    walletService.sendCompareRemainBalance();
   }
 
 }
