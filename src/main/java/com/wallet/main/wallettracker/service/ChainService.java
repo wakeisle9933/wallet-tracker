@@ -32,27 +32,47 @@ public class ChainService {
   private String baseFilePath;
 
   public Document seleniumBase(String url) {
-    // Selenium을 사용하여 동적 콘텐츠 가져오기
-    // ChromeOptions 객체 생성
-    ChromeOptions options = new ChromeOptions();
-    // headless 모드 활성화 (창이 보이지 않음)
-    options.addArguments("--window-position=10000,10000");
-    // ChromeDriver 설정 (Chrome 브라우저 사용)
-    WebDriver driver = new ChromeDriver(options);
-    // 페이지 로드
-    driver.get(url);
-    // WebDriverWait 설정, 10초간 기다리도록 설정
-    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-    // visibilityOfElementLocated 조건을 사용하여 동적 콘텐츠의 로드를 기다림
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(baseSelector)));
-    // 페이지 소스 가져오기
-    String content = driver.getPageSource();
-    // Jsoup을 사용하여 파싱
-    Document doc = Jsoup.parse(content);
-    // WebDriver 종료
-    driver.quit();
+    int maxRetries = 2; // 최대 재시도 횟수
+    int retryDelay = 1000; // 재시도 간격 (밀리초)
 
-    return doc;
+    for (int retry = 0; retry < maxRetries; retry++) {
+      try {
+        // ChromeOptions 객체 생성
+        ChromeOptions options = new ChromeOptions();
+        // headless 모드 활성화 (창이 보이지 않음)
+        options.addArguments("--window-position=10000,10000");
+        // ChromeDriver 설정 (Chrome 브라우저 사용)
+        WebDriver driver = new ChromeDriver(options);
+        // 페이지 로드
+        driver.get(url);
+        // WebDriverWait 설정, 10초간 기다리도록 설정
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // visibilityOfElementLocated 조건을 사용하여 동적 콘텐츠의 로드를 기다림
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(baseSelector)));
+        // 페이지 소스 가져오기
+        String content = driver.getPageSource();
+        // Jsoup을 사용하여 파싱
+        Document doc = Jsoup.parse(content);
+        // WebDriver 종료
+        driver.quit();
+        return doc;
+      } catch (Exception e) {
+        // 에러 발생 시 로그 출력
+        System.err.println("Error in seleniumBase: " + e.getMessage());
+        // 마지막 재시도였다면 예외 던지기
+        if (retry == maxRetries - 1) {
+          throw new RuntimeException("Failed to load page after " + maxRetries + " retries", e);
+        }
+        // 재시도 간격만큼 대기 (지수적으로 증가)
+        try {
+          Thread.sleep(retryDelay * (long) Math.pow(2, retry));
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+    // 재시도 후에도 결과를 얻지 못한 경우 null 반환
+    return null;
   }
 
   public StringBuilder base(String[] address) {
