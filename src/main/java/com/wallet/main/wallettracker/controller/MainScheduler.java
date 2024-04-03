@@ -18,7 +18,7 @@ public class MainScheduler {
     walletService.sendPeriodicEmail();
   }
 
-  @Scheduled(cron = "0 0/10 * * * ?")
+  // @Scheduled(cron = "0 0/10 * * * ?")
   public void balanceChecking() throws IOException, MessagingException {
     walletService.sendCompareRemainBalance();
   }
