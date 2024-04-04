@@ -1,5 +1,6 @@
 package com.wallet.main.wallettracker.controller;
 
+import com.wallet.main.wallettracker.service.ChainService;
 import com.wallet.main.wallettracker.service.WalletService;
 import jakarta.mail.MessagingException;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WalletController {
 
   private final WalletService walletService;
+  private final ChainService chainService;
 
   @GetMapping("/send-email")
   public void sendEmail() throws IOException, MessagingException {
@@ -34,5 +36,11 @@ public class WalletController {
   public void sendBaseCompareEmail() throws IOException, MessagingException {
     walletService.sendCompareRemainBalance();
   }
+
+  @GetMapping("/base-compare-i2scan")
+  public void sendBaseByI2ScanEmail() throws IOException, MessagingException {
+    chainService.seleniumBaseByI2Scan();
+  }
+
 
 }
