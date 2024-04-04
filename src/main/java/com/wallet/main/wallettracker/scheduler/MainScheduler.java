@@ -1,4 +1,4 @@
-package com.wallet.main.wallettracker.controller;
+package com.wallet.main.wallettracker.scheduler;
 
 import com.wallet.main.wallettracker.service.WalletService;
 import jakarta.mail.MessagingException;
@@ -20,7 +20,7 @@ public class MainScheduler {
 
   // @Scheduled(cron = "0 0/10 * * * ?")
   public void balanceChecking() throws IOException, MessagingException {
-    walletService.sendCompareRemainBalance();
+    walletService.sendCompareRemainBalanceByI2Scan();
   }
 
 }

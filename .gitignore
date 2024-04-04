@@ -36,8 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 /src/main/resources/base/Address
+/src/main/resources/email/Emails
 /src/main/resources/application.properties
-/src/main/resources/static/Emails
 /src/main/resources/wallet/*
 # Nickname_base 파일은 예외로 추가
 !/src/main/resources/wallet/Nickname_base

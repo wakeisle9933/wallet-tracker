@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -29,7 +28,7 @@ public class WalletService {
 
   private final JavaMailSender mailSender;
   private final ResourceLoader resourceLoader;
-  private final ChainService chainService;
+  private final SeleniumService seleniumService;
 
   @Value("${app.emails.file.path}")
   private String emailsFilePath;
@@ -38,31 +37,78 @@ public class WalletService {
   private String baseAddressPath;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
-    // 이메일 리스트
+
+  }
+
+  public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
     Resource resource = resourceLoader.getResource(emailsFilePath);
     Resource baseResource = resourceLoader.getResource(baseAddressPath);
 
-    BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
-    List<String> emailAddresses = reader.lines().toList();
-
-    BufferedReader baseReader = new BufferedReader(
+    BufferedReader emailReader = new BufferedReader(
+        new InputStreamReader(resource.getInputStream()));
+    BufferedReader addressReader = new BufferedReader(
         new InputStreamReader(baseResource.getInputStream()));
-    List<String> baseAddresses = baseReader.lines().toList();
-    StringBuilder htmlContent = new StringBuilder();
+
+    List<String> baseAddresses = addressReader.lines().toList();
+    StringBuilder mainSb = new StringBuilder();
     for (String address : baseAddresses) {
-      htmlContent.append(chainService.base(address.split(" ")).toString());
+      String[] addressNickname = address.split(" ");
+      String nickname = addressNickname[1];
+
+      // nickname에 해당하는 파일 경로 생성
+      String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
+      // 조회한 내역 가져오기
+      BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
+      // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
+      if (externalCompareBase == null) {
+        continue;
+      }
+
+      // 파일 존재 여부 확인
+      File nicknameFile = new File(nicknameFilePath);
+      boolean isNew = isNew(nicknameFile, externalCompareBase, false);
+
+      // 비교 로직 isNew = true 경우 신규 항목이므로 진행하지 않음
+      if (!isNew) {
+        // 생성된 파일 또는 기존 파일 사용 가능
+        nicknameFile = new File(nicknameFilePath);
+        BufferedReader nicknameReader = new BufferedReader(
+            new InputStreamReader(new FileInputStream(nicknameFile)));
+        String line;
+        ArrayList<String> nameList = new ArrayList<>();
+        ArrayList<String> quantityList = new ArrayList<>();
+        ArrayList<String> contractAddressList = new ArrayList<>();
+        while ((line = nicknameReader.readLine()) != null) {
+          String[] nameQuantity = line.split(" ");
+          nameList.add(nameQuantity[0].replace(" ", ""));
+          quantityList.add(nameQuantity[1]);
+          contractAddressList.add(nameQuantity[2]);
+        }
+
+        BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])
+            .name(nameList)
+            .quantity(quantityList)
+            .contractAddress(contractAddressList)
+            .build();
+
+        StringBuilder compareSb = compareBase(internalBaseModel, externalCompareBase);
+        if (!compareSb.toString().isEmpty()) {
+          mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
+          mainSb.append(compareSb).append("\n");
+        }
+
+        // 이후 덮어 씌워서 중복 방지
+        isNew(nicknameFile, externalCompareBase, true);
+      }
     }
 
-    for (String email : emailAddresses) {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-      helper.setTo(email);
-      helper.setSubject("Daily Base Chain Tracker");
-      helper.setText(htmlContent.toString(), true);
-      mailSender.send(message);
+    if (mainSb.toString().isEmpty()) {
+      // 변경 내역 없음
+    } else {
+      sendTxNotificationEmail(mainSb);
     }
-
   }
+
 
   public void sendTxNotificationEmail(StringBuilder transactions)
       throws IOException, MessagingException {
@@ -135,72 +181,6 @@ public class WalletService {
       mailSender.send(message);
     }
   }
-
-
-  public void sendCompareRemainBalance() throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
-    Resource baseResource = resourceLoader.getResource(baseAddressPath);
-
-    BufferedReader emailReader = new BufferedReader(
-        new InputStreamReader(resource.getInputStream()));
-    BufferedReader addressReader = new BufferedReader(
-        new InputStreamReader(baseResource.getInputStream()));
-
-    List<String> baseAddresses = addressReader.lines().toList();
-    StringBuilder mainSb = new StringBuilder();
-    for (String address : baseAddresses) {
-      String[] addressNickname = address.split(" ");
-      String nickname = addressNickname[1];
-
-      // nickname에 해당하는 파일 경로 생성
-      String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
-      // 조회한 내역 가져오기
-      BaseModel externalCompareBase = chainService.getCompareBase(addressNickname);
-      // 파일 존재 여부 확인
-      File nicknameFile = new File(nicknameFilePath);
-      boolean isNew = isNew(nicknameFile, externalCompareBase, false);
-
-      // 비교 로직 isNew = true 경우 신규 항목이므로 진행하지 않음
-      if (!isNew) {
-        // 생성된 파일 또는 기존 파일 사용 가능
-        nicknameFile = new File(nicknameFilePath);
-        BufferedReader nicknameReader = new BufferedReader(
-            new InputStreamReader(new FileInputStream(nicknameFile)));
-        String line;
-        ArrayList<String> nameList = new ArrayList<>();
-        ArrayList<String> quantityList = new ArrayList<>();
-        while ((line = nicknameReader.readLine()) != null) {
-          String[] nameQuantity = line.split(" ");
-          nameList.add(nameQuantity[0].replace(" ", ""));
-          quantityList.add(nameQuantity[1]);
-        }
-
-        BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])
-            .name(nameList)
-            .quantity(quantityList)
-            .build();
-
-        StringBuilder compareSb = compareBase(internalBaseModel, externalCompareBase);
-        if (!compareSb.toString().equals("")) {
-          mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
-          mainSb.append(compareSb).append("\n");
-        }
-
-        // 덮어 씌워서 중복 방지
-        isNew(nicknameFile, externalCompareBase, true);
-
-      }
-    }
-
-    if (mainSb.toString().equals("")) {
-      // 변경 내역 없음
-      System.out.println();
-    } else {
-      // sb로 메일링
-      sendTxNotificationEmail(mainSb);
-    }
-  }
-
 
   private static boolean isNew(File nicknameFile, BaseModel externalCompareBase, boolean remake)
       throws IOException {
@@ -284,76 +264,6 @@ public class WalletService {
     }
 
     return result;
-  }
-
-  public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
-    Resource baseResource = resourceLoader.getResource(baseAddressPath);
-
-    BufferedReader emailReader = new BufferedReader(
-        new InputStreamReader(resource.getInputStream()));
-    BufferedReader addressReader = new BufferedReader(
-        new InputStreamReader(baseResource.getInputStream()));
-
-    List<String> baseAddresses = addressReader.lines().toList();
-    StringBuilder mainSb = new StringBuilder();
-    for (String address : baseAddresses) {
-      String[] addressNickname = address.split(" ");
-      String nickname = addressNickname[1];
-
-      // nickname에 해당하는 파일 경로 생성
-      String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
-      // 조회한 내역 가져오기
-      BaseModel externalCompareBase = chainService.seleniumBaseByI2Scan(addressNickname);
-
-      // Return NULL일 경우 처리 로직 추가 ..
-      // ~
-
-      // 파일 존재 여부 확인
-      File nicknameFile = new File(nicknameFilePath);
-      boolean isNew = isNew(nicknameFile, externalCompareBase, false);
-
-      // 비교 로직 isNew = true 경우 신규 항목이므로 진행하지 않음
-      if (!isNew) {
-        // 생성된 파일 또는 기존 파일 사용 가능
-        nicknameFile = new File(nicknameFilePath);
-        BufferedReader nicknameReader = new BufferedReader(
-            new InputStreamReader(new FileInputStream(nicknameFile)));
-        String line;
-        ArrayList<String> nameList = new ArrayList<>();
-        ArrayList<String> quantityList = new ArrayList<>();
-        ArrayList<String> contractAddressList = new ArrayList<>();
-        while ((line = nicknameReader.readLine()) != null) {
-          String[] nameQuantity = line.split(" ");
-          nameList.add(nameQuantity[0].replace(" ", ""));
-          quantityList.add(nameQuantity[1]);
-          contractAddressList.add(nameQuantity[2]);
-        }
-
-        BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])
-            .name(nameList)
-            .quantity(quantityList)
-            .contractAddress(contractAddressList)
-            .build();
-
-        StringBuilder compareSb = compareBase(internalBaseModel, externalCompareBase);
-        if (!compareSb.toString().isEmpty()) {
-          mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
-          mainSb.append(compareSb).append("\n");
-        }
-
-        // 덮어 씌워서 중복 방지
-        isNew(nicknameFile, externalCompareBase, true);
-
-      }
-    }
-
-    if (mainSb.toString().isEmpty()) {
-      // 변경 내역 없음
-    } else {
-      // sb로 메일링
-      sendTxNotificationEmail(mainSb);
-    }
   }
 
   private static boolean isValidNumber(String str) {
