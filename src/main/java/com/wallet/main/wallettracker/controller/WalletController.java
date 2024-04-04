@@ -39,7 +39,7 @@ public class WalletController {
 
   @GetMapping("/base-compare-i2scan")
   public void sendBaseByI2ScanEmail() throws IOException, MessagingException {
-    chainService.seleniumBaseByI2Scan();
+    walletService.sendCompareRemainBalanceByI2Scan();
   }
 
 

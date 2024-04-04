@@ -81,10 +81,9 @@ public class ChainService {
     return null;
   }
 
-  public void seleniumBaseByI2Scan() {
+  public BaseModel seleniumBaseByI2Scan(String[] addressNickname) {
     int maxRetries = 3; // 최대 재시도 횟수
     int retryDelay = 1000; // 재시도 간격 (밀리초)
-    boolean isSuccess = false;
 
     // ChromeOptions 객체 생성
     ChromeOptions options = new ChromeOptions();
@@ -96,7 +95,7 @@ public class ChainService {
       try {
         // WebDriver 객체 생성
         driver = new ChromeDriver(options);
-        driver.get("https://base.l2scan.co/address/0x57B2e0A2B28BD6821F4aC95175487b98c4269203");
+        driver.get("https://base.l2scan.co/address/" + addressNickname[0]);
 
         // 클릭해야 로딩되는 토큰 정보 버튼 클릭
         WebElement divElement = driver.findElement(By.cssSelector(
@@ -104,7 +103,7 @@ public class ChainService {
         divElement.click();
 
         // 토큰 정보가 로딩될 때까지 기다림
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(
             "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.lmd\\:px-\\[5px\\].pb-3")));
 
@@ -112,47 +111,38 @@ public class ChainService {
         List<WebElement> tokenElements = driver.findElements(By.cssSelector(
             "div.rounded.px-3.py-\\[4px\\].transition-all.duration-200.cursor-pointer.flex.justify-between.items-center.text-xs.mb-\\[4px\\].last\\:border-none.last\\:mb-0"));
 
-        // 토큰 정보 처리 시작 시간 측정
-        long startTime = System.currentTimeMillis();
+        ArrayList<String> nameList = new ArrayList<>();
+        ArrayList<String> quantityList = new ArrayList<>();
+        ArrayList<String> contractAddressList = new ArrayList<>();
 
-        // i7-6700 -> 8 ~ 10 / i9-13900K -> 48 / 2~4배 사이에서 권장값 찾기
+        // i7-6700 -> 8 ~ 10 / i9-13900K -> 48 / 코어 2~4배 사이에서 권장값 찾기
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+        // ETH눈 Token이 아니므로 개별처리
+        nameList.add("ETH");
+        quantityList.add(driver.findElement(By.cssSelector("div.flex.flex-col > span")).getText());
+        contractAddressList.add("EthereumHasNoContractAddress");
+
+        // Token 처리
         for (WebElement tokenElement : tokenElements) {
           executorService.submit(() -> {
-            String name = tokenElement.findElement(By.cssSelector("a.text-accent.sm\\:break-all"))
-                .getText();
-            String amount = tokenElement.findElement(
-                By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText();
-            String address = tokenElement.findElement(
+            nameList.add(tokenElement.findElement(By.cssSelector("a.text-accent.sm\\:break-all"))
+                .getText().trim().replace(" ", ""));
+            quantityList.add(tokenElement.findElement(
+                    By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
+                .split(" ")[0]
+                .replaceAll("[^0-9.]", ""));
+            contractAddressList.add(tokenElement.findElement(
                     By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
-                .split("/token/")[1];
-            System.out.println(name + " / " + address + " / " + amount);
+                .split("/token/")[1]);
           });
         }
 
         executorService.shutdown();
         executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
-//        for (WebElement tokenElement : tokenElements) {
-//          String name = tokenElement.findElement(By.cssSelector("a.text-accent.sm\\:break-all"))
-//              .getText();
-//          String amount = tokenElement.findElement(
-//              By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText();
-//          String address = tokenElement.findElement(By.cssSelector("a.text-accent.sm\\:break-all"))
-//              .getAttribute("href").split("/token/")[1];
-//          System.out.println(name + " / " + address + " / " + amount);
-//        }
-
-        // 토큰 정보 처리 종료 시간 측정
-        long endTime = System.currentTimeMillis();
-
-        System.out.println(
-            "Token elements processing time: " + (endTime - startTime) + " milliseconds");
-
-        isSuccess = true;
         driver.quit();
-        break; // Return 변경 시 제거
+        return BaseModel.builder().nickname(addressNickname[1]).name(nameList)
+            .quantity(quantityList).contractAddress(contractAddressList).build();
       } catch (Exception e) {
         // 에러 발생 시 로그 출력
         System.err.println("Error in seleniumBase: " + e.getMessage());
@@ -173,6 +163,7 @@ public class ChainService {
         }
       }
     }
+    return null;
   }
 
   public StringBuilder base(String[] address) {

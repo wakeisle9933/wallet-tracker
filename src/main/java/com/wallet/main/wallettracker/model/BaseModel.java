@@ -13,5 +13,6 @@ public class BaseModel {
   String nickname;
   List<String> name;
   List<String> quantity;
+  List<String> contractAddress;
 
 }

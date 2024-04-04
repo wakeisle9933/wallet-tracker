@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -35,7 +36,6 @@ public class WalletService {
 
   @Value("${app.base.file.path}")
   private String baseAddressPath;
-
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
     // 이메일 리스트
@@ -91,11 +91,11 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Current Processed</th><th>Total Balance</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address</th></tr>");
 
         for (int i = 1; i < lines.length; i++) {
           String[] parts = lines[i].split(" - ");
-          if (parts.length >= 3) {
+          if (parts.length >= 4) {
             htmlContent.append("<tr>");
             htmlContent.append("<td>").append(parts[0].trim()).append("</td>");
             htmlContent.append("<td>").append(parts[1]).append("</td>");
@@ -103,12 +103,18 @@ public class WalletService {
               htmlContent.append("<td style='text-align: right;'>").append(parts[2])
                   .append("</td>");
               htmlContent.append("<td>").append("-").append("</td>");
+              String dexToolsUrl = "https://www.dextools.io/app/en/base/pair-explorer/" + parts[3];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(parts[3]).append("</a></td>");
             } else {
               htmlContent.append("<td style='text-align: right;'>").append(parts[2])
                   .append("</td>");
               htmlContent.append("<td style='text-align: right;'>")
                   .append(parts[3].replace("CURRENT BALANCE :", ""))
                   .append("</td>");
+              String dexToolsUrl = "https://www.dextools.io/app/en/base/pair-explorer/" + parts[4];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(parts[4]).append("</a></td>");
             }
             htmlContent.append("</tr>");
           }
@@ -193,9 +199,8 @@ public class WalletService {
       // sb로 메일링
       sendTxNotificationEmail(mainSb);
     }
-
-
   }
+
 
   private static boolean isNew(File nicknameFile, BaseModel externalCompareBase, boolean remake)
       throws IOException {
@@ -211,7 +216,8 @@ public class WalletService {
       for (int i = 0; i < externalCompareBase.getName().size(); i++) {
         String name = externalCompareBase.getName().get(i);
         String quantity = externalCompareBase.getQuantity().get(i);
-        writer.write(name + " " + quantity + "\n");
+        String contractAddress = externalCompareBase.getContractAddress().get(i);
+        writer.write(name + " " + quantity + " " + contractAddress + "\n");
       }
       writer.close();
     }
@@ -241,6 +247,8 @@ public class WalletService {
 
     // 각 케이스에 대해 비교
     for (String name : externalMap.keySet()) {
+      String contractAddress = externalBaseModel.getContractAddress()
+          .get(externalBaseModel.getName().indexOf(name));
       if (internalMap.containsKey(name)) {
         BigDecimal internalQuantity = internalMap.get(name);
         BigDecimal externalQuantity = externalMap.get(name);
@@ -249,27 +257,103 @@ public class WalletService {
           BigDecimal soldQuantity = internalQuantity.subtract(externalQuantity);
           result.append(name).append(" - ").append("SOLD! - ")
               .append(soldQuantity.stripTrailingZeros().toPlainString())
-              .append(" - CURRENT BALANCE : ").append(externalQuantity).append("\n");
+              .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
+              .append(contractAddress).append("\n");
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
           result.append(name).append(" - ").append("BOUGHT! - ")
               .append(boughtQuantity.stripTrailingZeros().toPlainString())
-              .append(" - CURRENT BALANCE : ").append(externalQuantity).append("\n");
+              .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
+              .append(contractAddress).append("\n");
         }
       } else {
         result.append(name).append(" - ").append("NEW ENTRY! - ")
-            .append(externalMap.get(name).stripTrailingZeros().toPlainString()).append("\n");
+            .append(externalMap.get(name).stripTrailingZeros().toPlainString()).append(" - ")
+            .append(contractAddress).append("\n");
       }
     }
 
     for (String name : internalMap.keySet()) {
       if (!externalMap.containsKey(name)) {
+        String contractAddress = externalBaseModel.getContractAddress()
+            .get(externalBaseModel.getName().indexOf(name));
         result.append(name).append(" - ").append("SOLD ALL! - ")
-            .append(internalMap.get(name).stripTrailingZeros().toPlainString()).append("\n");
+            .append(internalMap.get(name).stripTrailingZeros().toPlainString()).append(" - ")
+            .append(contractAddress).append("\n");
       }
     }
 
     return result;
+  }
+
+  public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
+    Resource resource = resourceLoader.getResource(emailsFilePath);
+    Resource baseResource = resourceLoader.getResource(baseAddressPath);
+
+    BufferedReader emailReader = new BufferedReader(
+        new InputStreamReader(resource.getInputStream()));
+    BufferedReader addressReader = new BufferedReader(
+        new InputStreamReader(baseResource.getInputStream()));
+
+    List<String> baseAddresses = addressReader.lines().toList();
+    StringBuilder mainSb = new StringBuilder();
+    for (String address : baseAddresses) {
+      String[] addressNickname = address.split(" ");
+      String nickname = addressNickname[1];
+
+      // nickname에 해당하는 파일 경로 생성
+      String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
+      // 조회한 내역 가져오기
+      BaseModel externalCompareBase = chainService.seleniumBaseByI2Scan(addressNickname);
+
+      // Return NULL일 경우 처리 로직 추가 ..
+      // ~
+
+      // 파일 존재 여부 확인
+      File nicknameFile = new File(nicknameFilePath);
+      boolean isNew = isNew(nicknameFile, externalCompareBase, false);
+
+      // 비교 로직 isNew = true 경우 신규 항목이므로 진행하지 않음
+      if (!isNew) {
+        // 생성된 파일 또는 기존 파일 사용 가능
+        nicknameFile = new File(nicknameFilePath);
+        BufferedReader nicknameReader = new BufferedReader(
+            new InputStreamReader(new FileInputStream(nicknameFile)));
+        String line;
+        ArrayList<String> nameList = new ArrayList<>();
+        ArrayList<String> quantityList = new ArrayList<>();
+        ArrayList<String> contractAddressList = new ArrayList<>();
+        while ((line = nicknameReader.readLine()) != null) {
+          String[] nameQuantity = line.split(" ");
+          nameList.add(nameQuantity[0].replace(" ", ""));
+          quantityList.add(nameQuantity[1]);
+          contractAddressList.add(nameQuantity[2]);
+        }
+
+        BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])
+            .name(nameList)
+            .quantity(quantityList)
+            .contractAddress(contractAddressList)
+            .build();
+
+        StringBuilder compareSb = compareBase(internalBaseModel, externalCompareBase);
+        if (!compareSb.toString().isEmpty()) {
+          mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
+          mainSb.append(compareSb).append("\n");
+        }
+
+        // 덮어 씌워서 중복 방지
+        isNew(nicknameFile, externalCompareBase, true);
+
+      }
+    }
+
+    if (mainSb.toString().isEmpty()) {
+      // 변경 내역 없음
+    } else {
+      // sb로 메일링
+      sendTxNotificationEmail(mainSb);
+    }
   }
 
   private static boolean isValidNumber(String str) {
