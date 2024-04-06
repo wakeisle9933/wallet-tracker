@@ -137,7 +137,7 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
         for (int i = 1; i < lines.length; i++) {
           String[] parts = lines[i].split(" - ");
