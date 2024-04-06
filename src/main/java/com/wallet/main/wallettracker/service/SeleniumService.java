@@ -1,13 +1,14 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
+import com.wallet.main.wallettracker.util.ExecutorServiceUtil;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -17,6 +18,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SeleniumService {
@@ -58,8 +60,7 @@ public class SeleniumService {
         ArrayList<String> quantityList = new ArrayList<>();
         ArrayList<String> contractAddressList = new ArrayList<>();
 
-        // i7-6700 -> 8 ~ 10 / i9-13900K -> 48 / 코어 2~4배 사이에서 권장값 찾기
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        ExecutorService executorService = ExecutorServiceUtil.getExecutorService();
 
         // ETH눈 Token이 아니므로 개별처리
         nameList.add("ETH");
@@ -81,14 +82,14 @@ public class SeleniumService {
           });
         }
 
-        executorService.shutdown();
+        ExecutorServiceUtil.shutdown();
         executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         driver.quit();
         return BaseModel.builder().nickname(addressNickname[1]).name(nameList)
             .quantity(quantityList).contractAddress(contractAddressList).build();
       } catch (Exception e) {
         // 에러 발생 시 로그 출력
-        System.err.println("Error in seleniumBase: " + e.getMessage());
+        log.error("Error in seleniumBase: " + e.getMessage());
         // 마지막 재시도였다면 예외 던지기
         if (retry == maxRetries - 1) {
           throw new RuntimeException("Failed to load page after " + maxRetries + " retries", e);
