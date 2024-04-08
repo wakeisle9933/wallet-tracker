@@ -82,8 +82,7 @@ public class SeleniumService {
           });
         }
 
-        ExecutorServiceUtil.shutdown();
-        executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        executorService.awaitTermination(15, TimeUnit.SECONDS);
         driver.quit();
         return BaseModel.builder().nickname(addressNickname[1]).name(nameList)
             .quantity(quantityList).contractAddress(contractAddressList).build();

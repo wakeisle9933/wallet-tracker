@@ -1,9 +1,10 @@
 package com.wallet.main.wallettracker.util;
 
+import jakarta.annotation.PreDestroy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -21,10 +22,12 @@ public class ExecutorServiceUtil {
     return executorService;
   }
 
+  @PreDestroy
   public static synchronized void shutdown() {
     if (executorService != null && !executorService.isShutdown()) {
       executorService.shutdown();
       log.info("ExecutorService shutdown");
     }
   }
+
 }
