@@ -37,7 +37,7 @@ public class WalletService {
   private String baseAddressPath;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
-
+    Resource resource = resourceLoader.getResource(emailsFilePath);
   }
 
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
