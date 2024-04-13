@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ResourceService {
+public class ResourceEmailService {
 
   public List<String> showEmailContents() {
     List<String> emailAddresses = new ArrayList<>();
