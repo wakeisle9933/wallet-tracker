@@ -6,7 +6,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,9 +43,10 @@ public class ResourceAddressController {
     }
   }
 
-  @PostMapping("/remove-address")
-  public ResponseEntity<String> requestRemoveAddressFromFile(@RequestBody AddressDto addressDto) {
-    boolean isRemoved = resourceAddressService.removeAddressFromFile(addressDto.getAddress());
+  @DeleteMapping("/remove-address/{address}")
+  public ResponseEntity<String> requestRemoveAddressFromFile(
+      @PathVariable("address") String address) {
+    boolean isRemoved = resourceAddressService.removeAddressFromFile(address);
 
     if (isRemoved) {
       return ResponseEntity.ok("Address removed successfully.");
@@ -53,7 +56,7 @@ public class ResourceAddressController {
     }
   }
 
-  @PostMapping("/remove-address-all")
+  @DeleteMapping("/remove-address-all")
   public ResponseEntity<String> requestRemoveAllAddress() {
     boolean isRemoved = resourceAddressService.removeAllAddress();
 

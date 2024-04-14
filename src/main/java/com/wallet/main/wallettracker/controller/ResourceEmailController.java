@@ -6,7 +6,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,9 +42,9 @@ public class ResourceEmailController {
     }
   }
 
-  @PostMapping("/remove-email")
-  public ResponseEntity<String> requestRemoveEmailFromFile(@RequestBody EmailDto emailDto) {
-    boolean isRemoved = resourceEmailService.removeEmailFromFile(emailDto.getEmail());
+  @DeleteMapping("/remove-email/{email}")
+  public ResponseEntity<String> requestRemoveEmailFromFile(@PathVariable("email") String email) {
+    boolean isRemoved = resourceEmailService.removeEmailFromFile(email);
 
     if (isRemoved) {
       return ResponseEntity.ok("Email removed successfully.");
@@ -52,7 +54,7 @@ public class ResourceEmailController {
     }
   }
 
-  @PostMapping("/remove-email-all")
+  @DeleteMapping("/remove-email-all")
   public ResponseEntity<String> requestRemoveAllEmails() {
     boolean isRemoved = resourceEmailService.removeAllEmails();
 
