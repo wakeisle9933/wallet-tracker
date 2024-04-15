@@ -37,8 +37,99 @@ public class WalletService {
   private String baseAddressPath;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
+    Resource baseResource = resourceLoader.getResource(baseAddressPath);
+    BufferedReader addressReader = new BufferedReader(
+        new InputStreamReader(baseResource.getInputStream()));
+
+    List<String> baseAddresses = addressReader.lines().toList();
+    StringBuilder mainSb = new StringBuilder();
+    for (String address : baseAddresses) {
+      String[] addressNickname = address.split(" ");
+
+      // 조회한 내역 가져오기
+      BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
+
+      // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
+      if (externalCompareBase == null) {
+        continue;
+      }
+
+      mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
+      mainSb.append(externalCompareBase.getName()).append(" - ");
+      mainSb.append(externalCompareBase.getQuantity()).append(" - ");
+      mainSb.append(externalCompareBase.getContractAddress()).append("\n\n");
+    }
+
+    sendDailyCheckEmail(mainSb);
+
   }
+
+  public void sendDailyCheckEmail(StringBuilder transactions)
+      throws IOException, MessagingException {
+    Resource resource = resourceLoader.getResource(emailsFilePath);
+    BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+    List<String> emailAddresses = reader.lines().toList();
+
+    // HTML 템플릿 생성
+    StringBuilder htmlContent = new StringBuilder();
+    htmlContent.append("<html><body>");
+    htmlContent.append("<h2>Daily Wallet Balance Checker</h2>");
+
+    String[] wallets = transactions.toString().split("\\n\\n");
+    for (String wallet : wallets) {
+      String[] lines = wallet.split("\\n");
+      if (lines.length > 0) {
+        String[] walletInfo = lines[0].split(" - ");
+        htmlContent.append("<h3>")
+            .append("<a href='https://base.blockscout.com/address/")
+            .append(walletInfo[0])
+            .append("?tab=tokens_erc20' target='_blank'>")
+            .append(walletInfo[0])
+            .append(" - ")
+            .append(walletInfo[1])
+            .append("</a>")
+            .append("</h3>");
+        htmlContent.append("<table border='1' cellpadding='5'>");
+        htmlContent.append(
+            "<tr><th>Currency</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+
+        for (int i = 1; i < lines.length; i++) {
+          String[] parts = lines[i].split(" - ");
+          if (parts.length >= 3) {
+            String[] currency = parts[0].substring(1, parts[0].length() - 1).split(", ");
+            String[] balance = parts[1].substring(1, parts[1].length() - 1).split(", ");
+            String[] contract = parts[2].substring(1, parts[2].length() - 1).split(", ");
+            for (int j = 0; j < currency.length; j++) {
+              htmlContent.append("<tr>");
+              htmlContent.append("<td>").append(currency[j].trim()).append("</td>");
+              htmlContent.append("<td style='text-align: right;'>")
+                  .append(balance[j])
+                  .append("</td>");
+              String dexToolsUrl =
+                  "https://www.dextools.io/app/en/base/pair-explorer/" + contract[j];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(contract[j]).append("</a></td>");
+              htmlContent.append("</tr>");
+            }
+          }
+        }
+
+        htmlContent.append("</table><br>");
+      }
+    }
+
+    htmlContent.append("</body></html>");
+
+    for (String email : emailAddresses) {
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+      helper.setTo(email);
+      helper.setSubject("10Minute Wallet Checker");
+      helper.setText(htmlContent.toString(), true); // HTML 내용 설정
+      mailSender.send(message);
+    }
+  }
+
 
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
     Resource resource = resourceLoader.getResource(emailsFilePath);
