@@ -63,7 +63,7 @@ public class SeleniumService {
         ExecutorService executorService = ExecutorServiceUtil.getExecutorService();
 
         // ETH는 Token이 아니므로 개별처리
-        nameList.add("BASE ETH");
+        nameList.add("BASE-ETH");
         quantityList.add(driver.findElement(By.cssSelector("div.flex.flex-col > span")).getText());
         contractAddressList.add("EthereumHasNoContractAddress");
 

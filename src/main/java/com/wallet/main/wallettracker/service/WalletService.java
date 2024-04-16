@@ -1,11 +1,13 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
+import com.wallet.main.wallettracker.util.FilePathConstants;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,9 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -27,19 +26,11 @@ import org.springframework.stereotype.Service;
 public class WalletService {
 
   private final JavaMailSender mailSender;
-  private final ResourceLoader resourceLoader;
   private final SeleniumService seleniumService;
 
-  @Value("${app.emails.file.path}")
-  private String emailsFilePath;
-
-  @Value("${app.base.file.path}")
-  private String baseAddressPath;
-
   public void sendPeriodicEmail() throws IOException, MessagingException {
-    Resource baseResource = resourceLoader.getResource(baseAddressPath);
-    BufferedReader addressReader = new BufferedReader(
-        new InputStreamReader(baseResource.getInputStream()));
+    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+    BufferedReader addressReader = new BufferedReader(new FileReader(file));
 
     List<String> baseAddresses = addressReader.lines().toList();
     StringBuilder mainSb = new StringBuilder();
@@ -66,9 +57,9 @@ public class WalletService {
 
   public void sendDailyCheckEmail(StringBuilder transactions)
       throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
-    List<String> emailAddresses = reader.lines().toList();
+    File file = new File(FilePathConstants.EMAIL_PATH);
+    BufferedReader emailReader = new BufferedReader(new FileReader(file));
+    List<String> emailAddresses = emailReader.lines().toList();
 
     // HTML 템플릿 생성
     StringBuilder htmlContent = new StringBuilder();
@@ -132,15 +123,10 @@ public class WalletService {
 
 
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
-    Resource baseResource = resourceLoader.getResource(baseAddressPath);
-
-    BufferedReader emailReader = new BufferedReader(
-        new InputStreamReader(resource.getInputStream()));
-    BufferedReader addressReader = new BufferedReader(
-        new InputStreamReader(baseResource.getInputStream()));
-
+    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+    BufferedReader addressReader = new BufferedReader(new FileReader(file));
     List<String> baseAddresses = addressReader.lines().toList();
+
     StringBuilder mainSb = new StringBuilder();
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
@@ -203,9 +189,9 @@ public class WalletService {
 
   public void sendTxNotificationEmail(StringBuilder transactions)
       throws IOException, MessagingException {
-    Resource resource = resourceLoader.getResource(emailsFilePath);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
-    List<String> emailAddresses = reader.lines().toList();
+    File file = new File(FilePathConstants.EMAIL_PATH);
+    BufferedReader emailReader = new BufferedReader(new FileReader(file));
+    List<String> emailAddresses = emailReader.lines().toList();
 
     // HTML 템플릿 생성
     StringBuilder htmlContent = new StringBuilder();
