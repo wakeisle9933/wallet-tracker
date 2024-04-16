@@ -364,7 +364,10 @@ public class WalletService {
   public boolean containsFilterKeyword(String s) throws IOException {
     try (BufferedReader filterKeywordReader = new BufferedReader(
         new FileReader(FilePathConstants.FILTER_KEYWORD_PATH))) {
-      return filterKeywordReader.lines().anyMatch(s::contains);
+      String lowerCaseStr = s.toLowerCase();
+      return filterKeywordReader.lines()
+          .map(String::toLowerCase)
+          .anyMatch(lowerCaseStr::contains);
     }
   }
 
