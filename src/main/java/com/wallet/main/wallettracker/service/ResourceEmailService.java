@@ -106,8 +106,12 @@ public class ResourceEmailService {
 
       if (found) {
         FileWriter fw = new FileWriter(file, false); // 파일을 덮어쓰기 모드로 열기
-        for (String content : lines) {
-          fw.write(content + System.lineSeparator());
+        for (int i = 0; i < lines.size(); i++) {
+          fw.write(lines.get(i));
+          // 마지막 라인이 아닌 경우에만 줄바꿈 추가
+          if (i < lines.size() - 1) {
+            fw.write(System.lineSeparator());
+          }
         }
         fw.close();
         return true;

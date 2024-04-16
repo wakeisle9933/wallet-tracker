@@ -75,9 +75,9 @@ public class WalletService {
             .append("<a href='https://base.blockscout.com/address/")
             .append(walletInfo[0])
             .append("?tab=tokens_erc20' target='_blank'>")
-            .append(walletInfo[0])
-            .append(" - ")
             .append(walletInfo[1])
+            .append(" - ")
+            .append(walletInfo[0])
             .append("</a>")
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
@@ -209,9 +209,9 @@ public class WalletService {
             .append("<a href='https://base.blockscout.com/address/")
             .append(walletInfo[0])
             .append("?tab=tokens_erc20' target='_blank'>")
-            .append(walletInfo[0])
-            .append(" - ")
             .append(walletInfo[1])
+            .append(" - ")
+            .append(walletInfo[0])
             .append("</a>")
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");

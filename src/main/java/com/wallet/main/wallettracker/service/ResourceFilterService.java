@@ -19,32 +19,32 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ResourceAddressService {
+public class ResourceFilterService {
 
-  public List<String> showAddressContents() {
-    List<String> addresses = new ArrayList<>();
+  public List<String> showFilterContents() {
+    List<String> filterKeywordList = new ArrayList<>();
 
     try {
-      File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+      File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
 
       if (file.exists() && file.isFile() && file.canRead()) {
         // 파일 내용 읽기
         String content = new String(Files.readAllBytes(file.toPath()));
 
         if (!content.trim().isEmpty()) {
-          addresses = Arrays.asList(content.split("\\r?\\n"));
+          filterKeywordList = Arrays.asList(content.split("\\s+"));
         }
       }
     } catch (IOException e) {
       e.printStackTrace();
-      log.error("Error reading the email file", e);
+      log.error("Error reading the filter file", e);
     }
 
-    return addresses;
+    return filterKeywordList;
   }
 
-  public boolean addAddressToFile(String address, String nickname) {
-    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+  public boolean addFilterToFile(String keyword) {
+    File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
 
     try {
       // 파일이 존재하지 않으면 생성
@@ -56,10 +56,10 @@ public class ResourceAddressService {
       BufferedReader br = new BufferedReader(new FileReader(file));
       String line;
       while ((line = br.readLine()) != null) {
-        if (line.contains(address)) {
+        if (line.equals(keyword)) {
           br.close();
-          log.error("Duplicate Address");
-          return false; // 중복된 주소가 있으면 false 반환
+          log.error("Duplicate Filter keyword");
+          return false; // 중복된 이메일이 있으면 false 반환
         }
       }
       br.close();
@@ -70,10 +70,10 @@ public class ResourceAddressService {
       PrintWriter out = new PrintWriter(bw);
 
       if (file.length() != 0) {
-        // 파일이 비어있지 않다면, 새 줄에 주소 추가
+        // 파일이 비어있지 않다면, 새 줄에 이메일 추가
         out.println();
       }
-      out.print(address + " " + nickname);
+      out.print(keyword);
 
       out.close();
       bw.close();
@@ -86,8 +86,8 @@ public class ResourceAddressService {
     }
   }
 
-  public boolean removeAddressFromFile(String email) {
-    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+  public boolean removeKeywordFromFile(String keyword) {
+    File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
     List<String> lines = new ArrayList<>();
     boolean found = false;
 
@@ -96,10 +96,10 @@ public class ResourceAddressService {
 
       String line;
       while ((line = br.readLine()) != null) {
-        if (!line.split(" ")[0].equals(email)) {
+        if (!line.trim().equals(keyword)) {
           lines.add(line);
         } else {
-          found = true; // 지워야 할 주소를 찾았다면 found를 true로 설정
+          found = true; // 지워야 할 키워드를 찾았다면 found를 true로 설정
         }
       }
       br.close();
@@ -125,8 +125,8 @@ public class ResourceAddressService {
     }
   }
 
-  public boolean removeAllAddress() {
-    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+  public boolean removeAllKeywords() {
+    File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
     try {
       FileWriter fw = new FileWriter(file, false);
       fw.close();
