@@ -12,4 +12,8 @@ public class FilePathConstants {
       "src" + File.separator + "main" + File.separator + "resources" + File.separator + "base"
           + File.separator + "Address";
 
+  public static final String FILTER_KEYWORD_PATH =
+      "src" + File.separator + "main" + File.separator + "resources" + File.separator + "filter"
+          + File.separator + "FilterKeyword";
+
 }
