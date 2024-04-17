@@ -30,7 +30,9 @@ public class SeleniumService {
     // ChromeOptions 객체 생성
     ChromeOptions options = new ChromeOptions();
     // headless 모드 활성화 (창이 보이지 않음)
-    options.addArguments("--window-position=10000,10000");
+    options.addArguments("--headless");
+    options.addArguments("--no-sandbox");
+    options.addArguments("--disable-dev-shm-usage");
 
     for (int retry = 0; retry < maxRetries; retry++) {
       WebDriver driver = null;
