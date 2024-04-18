@@ -1,14 +1,11 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
-import com.wallet.main.wallettracker.util.ExecutorServiceUtil;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -64,8 +61,6 @@ public class SeleniumService {
         ArrayList<String> quantityList = new ArrayList<>();
         ArrayList<String> contractAddressList = new ArrayList<>();
 
-        ExecutorService executorService = ExecutorServiceUtil.getExecutorService();
-
         // ETH는 Token이 아니므로 개별처리
         nameList.add("BASE-ETH");
         quantityList.add(driver.findElement(By.cssSelector("div.flex.flex-col > span")).getText());
@@ -73,28 +68,25 @@ public class SeleniumService {
 
         // Token 처리
         for (WebElement tokenElement : tokenElements) {
-          executorService.submit(() -> {
-            String name = tokenElement.findElement(
-                    By.cssSelector("a.text-accent.sm\\:break-all"))
-                .getText().trim().replace(" ", "");
-            try {
-              if (!FilterKeywordUtil.containsFilterKeyword(name)) {
-                nameList.add(name);
-                quantityList.add(tokenElement.findElement(
-                        By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
-                    .split(" ")[0]
-                    .replaceAll("[^0-9.]", ""));
-                contractAddressList.add(tokenElement.findElement(
-                        By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
-                    .split("/token/")[1]);
-              }
-            } catch (IOException e) {
-              throw new RuntimeException(e);
+          String name = tokenElement.findElement(
+                  By.cssSelector("a.text-accent.sm\\:break-all"))
+              .getText().trim().replace(" ", "");
+          try {
+            if (!FilterKeywordUtil.containsFilterKeyword(name)) {
+              nameList.add(name);
+              quantityList.add(tokenElement.findElement(
+                      By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
+                  .split(" ")[0]
+                  .replaceAll("[^0-9.]", ""));
+              contractAddressList.add(tokenElement.findElement(
+                      By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
+                  .split("/token/")[1]);
             }
-          });
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         }
 
-        executorService.awaitTermination(15, TimeUnit.SECONDS);
         driver.quit();
         return BaseModel.builder().nickname(addressNickname[1]).name(nameList)
             .quantity(quantityList).contractAddress(contractAddressList).build();

@@ -17,12 +17,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WalletService {
 
   private final JavaMailSender mailSender;
@@ -138,6 +140,7 @@ public class WalletService {
       BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
       // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
       if (externalCompareBase == null) {
+        log.info("No results in Selenium, Email Will Not Send");
         continue;
       }
 
@@ -180,7 +183,7 @@ public class WalletService {
     }
 
     if (mainSb.toString().isEmpty()) {
-      // 변경 내역 없음
+      log.info("No changes as a result of the check, Email Will Not Send");
     } else {
       sendTxNotificationEmail(mainSb);
     }
@@ -287,58 +290,58 @@ public class WalletService {
       BaseModel externalBaseModel) {
     StringBuilder result = new StringBuilder();
 
-    // name을 key로, quantity를 value로 하는 Map 생성
+    // name을 contract로, quantity를 value로 하는 Map 생성
     Map<String, BigDecimal> internalMap = new HashMap<>();
-    for (int i = 0; i < internalBaseModel.getName().size(); i++) {
+    for (int i = 0; i < internalBaseModel.getContractAddress().size(); i++) {
       String quantityStr = internalBaseModel.getQuantity().get(i);
       if (isValidNumber(quantityStr)) {
-        internalMap.put(internalBaseModel.getName().get(i), new BigDecimal(quantityStr));
+        internalMap.put(internalBaseModel.getContractAddress().get(i), new BigDecimal(quantityStr));
       }
     }
 
     Map<String, BigDecimal> externalMap = new HashMap<>();
-    for (int i = 0; i < externalBaseModel.getName().size(); i++) {
+    for (int i = 0; i < externalBaseModel.getContractAddress().size(); i++) {
       String quantityStr = externalBaseModel.getQuantity().get(i);
       if (isValidNumber(quantityStr)) {
-        externalMap.put(externalBaseModel.getName().get(i), new BigDecimal(quantityStr));
+        externalMap.put(externalBaseModel.getContractAddress().get(i), new BigDecimal(quantityStr));
       }
     }
 
     // 각 케이스에 대해 비교
-    for (String name : externalMap.keySet()) {
-      String contractAddress = externalBaseModel.getContractAddress()
-          .get(externalBaseModel.getName().indexOf(name));
-      if (internalMap.containsKey(name)) {
-        BigDecimal internalQuantity = internalMap.get(name);
-        BigDecimal externalQuantity = externalMap.get(name);
+    for (String contract : externalMap.keySet()) {
+      String name = externalBaseModel.getName()
+          .get(externalBaseModel.getContractAddress().indexOf(contract));
+      if (internalMap.containsKey(contract)) {
+        BigDecimal internalQuantity = internalMap.get(contract);
+        BigDecimal externalQuantity = externalMap.get(contract);
 
         if (internalQuantity.compareTo(externalQuantity) > 0) {
           BigDecimal soldQuantity = internalQuantity.subtract(externalQuantity);
           result.append(name).append(" - ").append("SOLD! - ")
               .append(soldQuantity.stripTrailingZeros().toPlainString())
               .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
-              .append(contractAddress).append("\n");
+              .append(contract).append("\n");
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
           result.append(name).append(" - ").append("BOUGHT! - ")
               .append(boughtQuantity.stripTrailingZeros().toPlainString())
               .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
-              .append(contractAddress).append("\n");
+              .append(contract).append("\n");
         }
       } else {
         result.append(name).append(" - ").append("NEW ENTRY! - ")
-            .append(externalMap.get(name).stripTrailingZeros().toPlainString()).append(" - ")
-            .append(contractAddress).append("\n");
+            .append(externalMap.get(contract).stripTrailingZeros().toPlainString()).append(" - ")
+            .append(contract).append("\n");
       }
     }
 
-    for (String name : internalMap.keySet()) {
-      if (!externalMap.containsKey(name)) {
-        String contractAddress = internalBaseModel.getContractAddress()
-            .get(internalBaseModel.getName().indexOf(name));
+    for (String contract : internalMap.keySet()) {
+      if (!externalMap.containsKey(contract)) {
+        String name = internalBaseModel.getName()
+            .get(internalBaseModel.getContractAddress().indexOf(contract));
         result.append(name).append(" - ").append("SOLD ALL! - ")
-            .append(internalMap.get(name).stripTrailingZeros().toPlainString()).append(" - ")
-            .append(contractAddress).append("\n");
+            .append(internalMap.get(contract).stripTrailingZeros().toPlainString()).append(" - ")
+            .append(contract).append("\n");
       }
     }
 
