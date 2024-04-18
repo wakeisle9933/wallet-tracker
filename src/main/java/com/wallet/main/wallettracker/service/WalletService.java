@@ -1,7 +1,11 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
+import com.wallet.main.wallettracker.model.BaseCompareModel;
+import com.wallet.main.wallettracker.model.BaseResultModel;
+import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
+import com.wallet.main.wallettracker.util.StatusConstants;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.BufferedReader;
@@ -106,7 +110,6 @@ public class WalletService {
             }
           }
         }
-
         htmlContent.append("</table><br>");
       }
     }
@@ -123,13 +126,12 @@ public class WalletService {
     }
   }
 
-
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
     BufferedReader addressReader = new BufferedReader(new FileReader(file));
     List<String> baseAddresses = addressReader.lines().toList();
+    ArrayList<BaseResultModel> baseResultModelList = new ArrayList<>();
 
-    StringBuilder mainSb = new StringBuilder();
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
       String nickname = addressNickname[1];
@@ -171,26 +173,22 @@ public class WalletService {
             .contractAddress(contractAddressList)
             .build();
 
-        StringBuilder compareSb = compareBase(internalBaseModel, externalCompareBase);
-        if (!compareSb.toString().isEmpty()) {
-          mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
-          mainSb.append(compareSb).append("\n");
-        }
+        baseResultModelList.add(compareBase(internalBaseModel, externalCompareBase));
 
         // 이후 덮어 씌워서 중복 방지
         isNew(nicknameFile, externalCompareBase, true);
       }
     }
 
-    if (mainSb.toString().isEmpty()) {
+    if (baseResultModelList.stream()
+        .allMatch(result -> result.getBaseCompareModelList().isEmpty())) {
       log.info("No changes as a result of the check, Email Will Not Send");
     } else {
-      sendTxNotificationEmail(mainSb);
+      sendTxNotificationEmail(baseResultModelList);
     }
   }
 
-
-  public void sendTxNotificationEmail(StringBuilder transactions)
+  public void sendTxNotificationEmail(List<BaseResultModel> baseResultModelList)
       throws IOException, MessagingException {
     File file = new File(FilePathConstants.EMAIL_PATH);
     BufferedReader emailReader = new BufferedReader(new FileReader(file));
@@ -201,53 +199,57 @@ public class WalletService {
     htmlContent.append("<html><body>");
     htmlContent.append("<h2>10Minute Wallet Checker</h2>");
 
-    String[] wallets = transactions.toString().split("\\n\\n");
-    for (String wallet : wallets) {
-      String[] lines = wallet.split("\\n");
-      if (lines.length > 0) {
-        String[] walletInfo = lines[0].split(" - ");
+    for (BaseResultModel baseResultModel : baseResultModelList) {
+      if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
         htmlContent.append("<h3>")
             .append("<a href='https://base.blockscout.com/address/")
-            .append(walletInfo[0])
+            .append(baseResultModel.getContractAddress())
             .append("?tab=tokens_erc20' target='_blank'>")
-            .append(walletInfo[1])
+            .append(baseResultModel.getNickname())
             .append(" - ")
-            .append(walletInfo[0])
+            .append(baseResultModel.getContractAddress())
             .append("</a>")
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
-        for (int i = 1; i < lines.length; i++) {
-          String[] parts = lines[i].split(" - ");
-          if (parts.length >= 4) {
-            htmlContent.append("<tr>");
-            htmlContent.append("<td>").append(parts[0].trim()).append("</td>");
-            htmlContent.append("<td>").append(parts[1]).append("</td>");
-            if (parts[1].contains("NEW ENTRY") || parts[1].contains("SOLD ALL!")) {
-              htmlContent.append("<td style='text-align: right;'>").append(parts[2])
-                  .append("</td>");
-              htmlContent.append("<td>").append("-").append("</td>");
-              String dexToolsUrl =
-                  "https://www.dextools.io/app/en/base/pair-explorer/" + parts[3];
-              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                  .append("\" target=\"_blank\">").append(parts[3]).append("</a></td>");
-            } else {
-              htmlContent.append("<td style='text-align: right;'>").append(parts[2])
-                  .append("</td>");
-              htmlContent.append("<td style='text-align: right;'>")
-                  .append(parts[3].replace("CURRENT BALANCE :", ""))
-                  .append("</td>");
-              String dexToolsUrl =
-                  "https://www.dextools.io/app/en/base/pair-explorer/" + parts[4];
-              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                  .append("\" target=\"_blank\">").append(parts[4]).append("</a></td>");
-            }
-            htmlContent.append("</tr>");
+        for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
+          htmlContent.append("<tr>");
+          htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
+          htmlContent.append("<td>").append(baseCompareModel.getStatus()).append("</td>");
+          if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY ||
+              baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
+            htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
+                .append("<td style='text-align: right;'>")
+                .append(baseCompareModel.getTotalQuantity())
+                .append("</td>");
+            htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+            String dexToolsUrl =
+                "https://www.dextools.io/app/en/base/pair-explorer/"
+                    + baseCompareModel.getContractAddress();
+            htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                .append("</a></td>");
+          } else {
+            htmlContent.append("<td style='text-align: right;'>")
+                .append(baseCompareModel.getPreviousQuantity())
+                .append("</td>")
+                .append("<td style='text-align: right;'>")
+                .append(baseCompareModel.getProceedQuantity())
+                .append("</td>");
+            htmlContent.append("<td style='text-align: right;'>")
+                .append(baseCompareModel.getTotalQuantity())
+                .append("</td>");
+            String dexToolsUrl =
+                "https://www.dextools.io/app/en/base/pair-explorer/"
+                    + baseCompareModel.getContractAddress();
+            htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                .append("</a></td>");
           }
+          htmlContent.append("</tr>");
         }
-
         htmlContent.append("</table><br>");
       }
     }
@@ -286,9 +288,9 @@ public class WalletService {
     return isNew;
   }
 
-  private static StringBuilder compareBase(BaseModel internalBaseModel,
+  private static BaseResultModel compareBase(BaseModel internalBaseModel,
       BaseModel externalBaseModel) {
-    StringBuilder result = new StringBuilder();
+    List<BaseCompareModel> compareModelList = new ArrayList<>();
 
     // name을 contract로, quantity를 value로 하는 Map 생성
     Map<String, BigDecimal> internalMap = new HashMap<>();
@@ -317,21 +319,26 @@ public class WalletService {
 
         if (internalQuantity.compareTo(externalQuantity) > 0) {
           BigDecimal soldQuantity = internalQuantity.subtract(externalQuantity);
-          result.append(name).append(" - ").append("SOLD! - ")
-              .append(soldQuantity.stripTrailingZeros().toPlainString())
-              .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
-              .append(contract).append("\n");
+          compareModelList.add(BaseCompareModel.builder().name(name)
+              .status(StatusConstants.SOLD)
+              .previousQuantity(BigDecimalUtil.format(internalQuantity))
+              .proceedQuantity(BigDecimalUtil.format(soldQuantity))
+              .totalQuantity(BigDecimalUtil.format(externalQuantity))
+              .contractAddress(contract).build());
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
-          result.append(name).append(" - ").append("BOUGHT! - ")
-              .append(boughtQuantity.stripTrailingZeros().toPlainString())
-              .append(" - CURRENT BALANCE : ").append(externalQuantity).append(" - ")
-              .append(contract).append("\n");
+          compareModelList.add(BaseCompareModel.builder().name(name)
+              .status(StatusConstants.BOUGHT)
+              .previousQuantity(BigDecimalUtil.format(internalQuantity))
+              .proceedQuantity(BigDecimalUtil.format(boughtQuantity))
+              .totalQuantity(BigDecimalUtil.format(externalQuantity))
+              .contractAddress(contract).build());
         }
       } else {
-        result.append(name).append(" - ").append("NEW ENTRY! - ")
-            .append(externalMap.get(contract).stripTrailingZeros().toPlainString()).append(" - ")
-            .append(contract).append("\n");
+        compareModelList.add(BaseCompareModel.builder().name(name)
+            .status(StatusConstants.NEW_ENTRY)
+            .totalQuantity(BigDecimalUtil.format(externalMap.get(contract)))
+            .contractAddress(contract).build());
       }
     }
 
@@ -339,13 +346,16 @@ public class WalletService {
       if (!externalMap.containsKey(contract)) {
         String name = internalBaseModel.getName()
             .get(internalBaseModel.getContractAddress().indexOf(contract));
-        result.append(name).append(" - ").append("SOLD ALL! - ")
-            .append(internalMap.get(contract).stripTrailingZeros().toPlainString()).append(" - ")
-            .append(contract).append("\n");
+        compareModelList.add(BaseCompareModel.builder().name(name)
+            .status(StatusConstants.SOLD_ALL)
+            .totalQuantity(BigDecimalUtil.format(internalMap.get(contract)))
+            .contractAddress(contract).build());
       }
     }
 
-    return result;
+    return BaseResultModel.builder().contractAddress(externalBaseModel.getWalletAddress())
+        .nickname(internalBaseModel.getNickname())
+        .baseCompareModelList(compareModelList).build();
   }
 
   private static boolean isValidNumber(String str) {

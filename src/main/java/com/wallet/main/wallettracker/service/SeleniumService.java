@@ -88,7 +88,9 @@ public class SeleniumService {
         }
 
         driver.quit();
-        return BaseModel.builder().nickname(addressNickname[1]).name(nameList)
+        return BaseModel.builder().walletAddress(addressNickname[0])
+            .nickname(addressNickname[1])
+            .name(nameList)
             .quantity(quantityList).contractAddress(contractAddressList).build();
       } catch (Exception e) {
         // 에러 발생 시 로그 출력

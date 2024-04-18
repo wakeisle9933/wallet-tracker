@@ -8,12 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class BaseModel {
+public class BaseResultModel {
 
   String nickname;
-  String walletAddress;
-  List<String> name;
-  List<String> quantity;
-  List<String> contractAddress;
+  String contractAddress;
+  List<BaseCompareModel> baseCompareModelList;
 
 }
