@@ -91,18 +91,16 @@ public class WalletService {
             String[] balance = parts[1].substring(1, parts[1].length() - 1).split(", ");
             String[] contract = parts[2].substring(1, parts[2].length() - 1).split(", ");
             for (int j = 0; j < currency.length; j++) {
-              if (!containsFilterKeyword(currency[j].trim())) {
-                htmlContent.append("<tr>");
-                htmlContent.append("<td>").append(currency[j].trim()).append("</td>");
-                htmlContent.append("<td style='text-align: right;'>")
-                    .append(balance[j])
-                    .append("</td>");
-                String dexToolsUrl =
-                    "https://www.dextools.io/app/en/base/pair-explorer/" + contract[j];
-                htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                    .append("\" target=\"_blank\">").append(contract[j]).append("</a></td>");
-                htmlContent.append("</tr>");
-              }
+              htmlContent.append("<tr>");
+              htmlContent.append("<td>").append(currency[j].trim()).append("</td>");
+              htmlContent.append("<td style='text-align: right;'>")
+                  .append(balance[j])
+                  .append("</td>");
+              String dexToolsUrl =
+                  "https://www.dextools.io/app/en/base/pair-explorer/" + contract[j];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(contract[j]).append("</a></td>");
+              htmlContent.append("</tr>");
             }
           }
         }
@@ -117,7 +115,7 @@ public class WalletService {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
       helper.setTo(email);
-      helper.setSubject("10Minute Wallet Checker");
+      helper.setSubject("Daily Wallet Balance Checker");
       helper.setText(htmlContent.toString(), true); // HTML 내용 설정
       mailSender.send(message);
     }
@@ -221,31 +219,29 @@ public class WalletService {
         for (int i = 1; i < lines.length; i++) {
           String[] parts = lines[i].split(" - ");
           if (parts.length >= 4) {
-            if (!containsFilterKeyword(parts[0].trim())) {
-              htmlContent.append("<tr>");
-              htmlContent.append("<td>").append(parts[0].trim()).append("</td>");
-              htmlContent.append("<td>").append(parts[1]).append("</td>");
-              if (parts[1].contains("NEW ENTRY") || parts[1].contains("SOLD ALL!")) {
-                htmlContent.append("<td style='text-align: right;'>").append(parts[2])
-                    .append("</td>");
-                htmlContent.append("<td>").append("-").append("</td>");
-                String dexToolsUrl =
-                    "https://www.dextools.io/app/en/base/pair-explorer/" + parts[3];
-                htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                    .append("\" target=\"_blank\">").append(parts[3]).append("</a></td>");
-              } else {
-                htmlContent.append("<td style='text-align: right;'>").append(parts[2])
-                    .append("</td>");
-                htmlContent.append("<td style='text-align: right;'>")
-                    .append(parts[3].replace("CURRENT BALANCE :", ""))
-                    .append("</td>");
-                String dexToolsUrl =
-                    "https://www.dextools.io/app/en/base/pair-explorer/" + parts[4];
-                htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                    .append("\" target=\"_blank\">").append(parts[4]).append("</a></td>");
-              }
-              htmlContent.append("</tr>");
+            htmlContent.append("<tr>");
+            htmlContent.append("<td>").append(parts[0].trim()).append("</td>");
+            htmlContent.append("<td>").append(parts[1]).append("</td>");
+            if (parts[1].contains("NEW ENTRY") || parts[1].contains("SOLD ALL!")) {
+              htmlContent.append("<td style='text-align: right;'>").append(parts[2])
+                  .append("</td>");
+              htmlContent.append("<td>").append("-").append("</td>");
+              String dexToolsUrl =
+                  "https://www.dextools.io/app/en/base/pair-explorer/" + parts[3];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(parts[3]).append("</a></td>");
+            } else {
+              htmlContent.append("<td style='text-align: right;'>").append(parts[2])
+                  .append("</td>");
+              htmlContent.append("<td style='text-align: right;'>")
+                  .append(parts[3].replace("CURRENT BALANCE :", ""))
+                  .append("</td>");
+              String dexToolsUrl =
+                  "https://www.dextools.io/app/en/base/pair-explorer/" + parts[4];
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(parts[4]).append("</a></td>");
             }
+            htmlContent.append("</tr>");
           }
         }
 
@@ -338,8 +334,8 @@ public class WalletService {
 
     for (String name : internalMap.keySet()) {
       if (!externalMap.containsKey(name)) {
-        String contractAddress = externalBaseModel.getContractAddress()
-            .get(externalBaseModel.getName().indexOf(name));
+        String contractAddress = internalBaseModel.getContractAddress()
+            .get(internalBaseModel.getName().indexOf(name));
         result.append(name).append(" - ").append("SOLD ALL! - ")
             .append(internalMap.get(name).stripTrailingZeros().toPlainString()).append(" - ")
             .append(contractAddress).append("\n");
@@ -358,16 +354,6 @@ public class WalletService {
       return true;
     } catch (NumberFormatException e) {
       return false;
-    }
-  }
-
-  public boolean containsFilterKeyword(String s) throws IOException {
-    try (BufferedReader filterKeywordReader = new BufferedReader(
-        new FileReader(FilePathConstants.FILTER_KEYWORD_PATH))) {
-      String lowerCaseStr = s.toLowerCase();
-      return filterKeywordReader.lines()
-          .map(String::toLowerCase)
-          .anyMatch(lowerCaseStr::contains);
     }
   }
 

@@ -13,12 +13,12 @@ public class WalletController {
 
   private final WalletService walletService;
 
-  @GetMapping("/send-email")
+  @GetMapping("/send-periodic-email")
   public void sendEmail() throws IOException, MessagingException {
     walletService.sendPeriodicEmail();
   }
 
-  @GetMapping("/base-compare-i2scan")
+  @GetMapping("/send-base-compare-i2scan")
   public void sendBaseByI2ScanEmail() throws IOException, MessagingException {
     walletService.sendCompareRemainBalanceByI2Scan();
   }

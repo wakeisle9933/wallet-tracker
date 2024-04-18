@@ -2,6 +2,8 @@ package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.util.ExecutorServiceUtil;
+import com.wallet.main.wallettracker.util.FilterKeywordUtil;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,15 +74,23 @@ public class SeleniumService {
         // Token 처리
         for (WebElement tokenElement : tokenElements) {
           executorService.submit(() -> {
-            nameList.add(tokenElement.findElement(By.cssSelector("a.text-accent.sm\\:break-all"))
-                .getText().trim().replace(" ", ""));
-            quantityList.add(tokenElement.findElement(
-                    By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
-                .split(" ")[0]
-                .replaceAll("[^0-9.]", ""));
-            contractAddressList.add(tokenElement.findElement(
-                    By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
-                .split("/token/")[1]);
+            String name = tokenElement.findElement(
+                    By.cssSelector("a.text-accent.sm\\:break-all"))
+                .getText().trim().replace(" ", "");
+            try {
+              if (!FilterKeywordUtil.containsFilterKeyword(name)) {
+                nameList.add(name);
+                quantityList.add(tokenElement.findElement(
+                        By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
+                    .split(" ")[0]
+                    .replaceAll("[^0-9.]", ""));
+                contractAddressList.add(tokenElement.findElement(
+                        By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
+                    .split("/token/")[1]);
+              }
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
           });
         }
 
