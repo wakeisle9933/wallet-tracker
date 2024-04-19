@@ -41,3 +41,5 @@ out/
 /src/main/resources/wallet/*
 # Nickname_base 파일은 예외로 추가
 !/src/main/resources/wallet/Nickname_base
+/src/main/resources/chromedriver/*
+!/src/main/resources/chromedriver/ChromeDriverProfileWillCreate
