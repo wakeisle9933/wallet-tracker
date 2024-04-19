@@ -3,9 +3,11 @@ package com.wallet.main.wallettracker.service;
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.model.BaseCompareModel;
 import com.wallet.main.wallettracker.model.BaseResultModel;
+import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
+import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.BufferedReader;
@@ -40,6 +42,7 @@ public class WalletService {
 
     List<String> baseAddresses = addressReader.lines().toList();
     StringBuilder mainSb = new StringBuilder();
+    List<BaseResultModel> baseResultModelList = new ArrayList<>();
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
 
@@ -51,17 +54,25 @@ public class WalletService {
         continue;
       }
 
-      mainSb.append(addressNickname[0]).append(" - ").append(addressNickname[1]).append("\n");
-      mainSb.append(externalCompareBase.getName()).append(" - ");
-      mainSb.append(externalCompareBase.getQuantity()).append(" - ");
-      mainSb.append(externalCompareBase.getContractAddress()).append("\n\n");
+      List<BaseCompareModel> baseCompareModelList = new ArrayList<>();
+      for (int i = 0; i < externalCompareBase.getContractAddress().size(); i++) {
+        baseCompareModelList.add(
+            BaseCompareModel.builder().name(externalCompareBase.getName().get(i))
+                .totalQuantity(externalCompareBase.getQuantity().get(i))
+                .contractAddress(externalCompareBase.getContractAddress().get(i))
+                .build());
+      }
+
+      baseResultModelList.add(
+          BaseResultModel.builder().nickname(addressNickname[1]).contractAddress(addressNickname[0])
+              .baseCompareModelList(baseCompareModelList).build());
     }
 
-    sendDailyCheckEmail(mainSb);
+    sendDailyCheckEmail(baseResultModelList);
 
   }
 
-  public void sendDailyCheckEmail(StringBuilder transactions)
+  public void sendDailyCheckEmail(List<BaseResultModel> baseResultModelList)
       throws IOException, MessagingException {
     File file = new File(FilePathConstants.EMAIL_PATH);
     BufferedReader emailReader = new BufferedReader(new FileReader(file));
@@ -72,43 +83,34 @@ public class WalletService {
     htmlContent.append("<html><body>");
     htmlContent.append("<h2>Daily Wallet Balance Checker</h2>");
 
-    String[] wallets = transactions.toString().split("\\n\\n");
-    for (String wallet : wallets) {
-      String[] lines = wallet.split("\\n");
-      if (lines.length > 0) {
-        String[] walletInfo = lines[0].split(" - ");
+    for (BaseResultModel baseResultModel : baseResultModelList) {
+      if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
         htmlContent.append("<h3>")
             .append("<a href='https://base.blockscout.com/address/")
-            .append(walletInfo[0])
+            .append(baseResultModel.getContractAddress())
             .append("?tab=tokens_erc20' target='_blank'>")
-            .append(walletInfo[1])
+            .append(baseResultModel.getNickname())
             .append(" - ")
-            .append(walletInfo[0])
+            .append(baseResultModel.getContractAddress())
             .append("</a>")
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
             "<tr><th>Currency</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
-        for (int i = 1; i < lines.length; i++) {
-          String[] parts = lines[i].split(" - ");
-          if (parts.length >= 3) {
-            String[] currency = parts[0].substring(1, parts[0].length() - 1).split(", ");
-            String[] balance = parts[1].substring(1, parts[1].length() - 1).split(", ");
-            String[] contract = parts[2].substring(1, parts[2].length() - 1).split(", ");
-            for (int j = 0; j < currency.length; j++) {
-              htmlContent.append("<tr>");
-              htmlContent.append("<td>").append(currency[j].trim()).append("</td>");
-              htmlContent.append("<td style='text-align: right;'>")
-                  .append(balance[j])
-                  .append("</td>");
-              String dexToolsUrl =
-                  "https://www.dextools.io/app/en/base/pair-explorer/" + contract[j];
-              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                  .append("\" target=\"_blank\">").append(contract[j]).append("</a></td>");
-              htmlContent.append("</tr>");
-            }
-          }
+        for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
+          htmlContent.append("<tr>");
+          htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
+          htmlContent.append("<td style='text-align: right;'>")
+              .append(baseCompareModel.getTotalQuantity())
+              .append("</td>");
+          String dexToolsUrl =
+              "https://www.dextools.io/app/en/base/pair-explorer/"
+                  + baseCompareModel.getContractAddress();
+          htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+              .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+              .append("</a></td>");
+          htmlContent.append("</tr>");
         }
         htmlContent.append("</table><br>");
       }
@@ -161,10 +163,10 @@ public class WalletService {
         ArrayList<String> quantityList = new ArrayList<>();
         ArrayList<String> contractAddressList = new ArrayList<>();
         while ((line = nicknameReader.readLine()) != null) {
-          String[] nameQuantity = line.split(" ");
-          nameList.add(nameQuantity[0].replace(" ", ""));
-          quantityList.add(nameQuantity[1]);
-          contractAddressList.add(nameQuantity[2]);
+          WalletModel walletModel = WalletLineParseUtil.parse(line);
+          nameList.add(walletModel.getName());
+          quantityList.add(walletModel.getAmount());
+          contractAddressList.add(walletModel.getContractAddress());
         }
 
         BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])

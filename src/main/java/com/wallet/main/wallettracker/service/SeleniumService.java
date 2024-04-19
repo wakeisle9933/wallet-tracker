@@ -3,6 +3,12 @@ package com.wallet.main.wallettracker.service;
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +38,9 @@ public class SeleniumService {
     options.addArguments("--headless");
     options.addArguments("--no-sandbox");
     options.addArguments("--disable-dev-shm-usage");
+    String userDir = System.getProperty("user.dir") + "/src/main/resources/chromedriver/"
+        + System.currentTimeMillis();
+    options.addArguments("--user-data-dir=" + userDir);
 
     for (int retry = 0; retry < maxRetries; retry++) {
       WebDriver driver = null;
@@ -49,7 +58,7 @@ public class SeleniumService {
         divElement.click();
 
         // 토큰 정보가 로딩될 때까지 기다림
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(
             "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.lmd\\:px-\\[5px\\].pb-3")));
 
@@ -70,7 +79,7 @@ public class SeleniumService {
         for (WebElement tokenElement : tokenElements) {
           String name = tokenElement.findElement(
                   By.cssSelector("a.text-accent.sm\\:break-all"))
-              .getText().trim().replace(" ", "");
+              .getText();
           try {
             if (!FilterKeywordUtil.containsFilterKeyword(name)) {
               nameList.add(name);
@@ -109,6 +118,36 @@ public class SeleniumService {
         // 예외 발생 여부와 상관없이 항상 실행되는 finally 블록
         if (driver != null) {
           driver.quit();
+          // ChromeDriver 프로세스 강제 종료
+          try {
+            // taskkill 명령어로 ChromeDriver 프로세스 종료
+            ProcessBuilder processBuilder = new ProcessBuilder("taskkill", "/F", "/IM",
+                "chromedriver.exe");
+            Process process = processBuilder.start();
+            process.waitFor();
+
+            // 프로필 디렉토리 삭제
+            Path profileDir = Paths.get(userDir);
+            Files.walkFileTree(profileDir, new SimpleFileVisitor<Path>() {
+              @Override
+              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+              }
+
+              @Override
+              public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                  throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+              }
+            });
+
+
+          } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+          }
         }
       }
     }
