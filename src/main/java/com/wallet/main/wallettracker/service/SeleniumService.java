@@ -50,7 +50,7 @@ public class SeleniumService {
         driver.get("https://base.l2scan.co/address/" + addressNickname[0]);
 
         // 클릭해야 로딩되는 토큰 정보 버튼 클릭
-        WebDriverWait waitClick = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait waitClick = new WebDriverWait(driver, Duration.ofSeconds(20));
         // 클릭해야 하는 요소가 나타날 때까지 기다림
         WebElement divElement = waitClick.until(
             ExpectedConditions.elementToBeClickable(By.cssSelector(
@@ -58,7 +58,7 @@ public class SeleniumService {
         divElement.click();
 
         // 토큰 정보가 로딩될 때까지 기다림
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(
             "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.lmd\\:px-\\[5px\\].pb-3")));
 
@@ -120,11 +120,17 @@ public class SeleniumService {
           driver.quit();
           // ChromeDriver 프로세스 강제 종료
           try {
-            // taskkill 명령어로 ChromeDriver 프로세스 종료
-            ProcessBuilder processBuilder = new ProcessBuilder("taskkill", "/F", "/IM",
-                "chromedriver.exe");
-            Process process = processBuilder.start();
-            process.waitFor();
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+              // Windows에서 chromedriver 프로세스 종료
+              ProcessBuilder processBuilder = new ProcessBuilder("taskkill", "/F", "/IM",
+                  "chromedriver.exe");
+              processBuilder.start().waitFor();
+            } else {
+              // Linux에서 chromedriver 프로세스 종료
+              ProcessBuilder killBuilder = new ProcessBuilder("sh", "-c", "pkill chromedriver");
+              killBuilder.start().waitFor();
+            }
 
             // 프로필 디렉토리 삭제
             Path profileDir = Paths.get(userDir);
@@ -143,7 +149,6 @@ public class SeleniumService {
                 return FileVisitResult.CONTINUE;
               }
             });
-
 
           } catch (IOException | InterruptedException e) {
             e.printStackTrace();
