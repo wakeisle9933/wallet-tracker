@@ -13,7 +13,7 @@ public class MainScheduler {
 
   private final WalletService walletService;
 
-  @Scheduled(cron = "0 0 10 * * ?")
+  @Scheduled(cron = "0 0 10 * * ?", zone = "Asia/Seoul")
   public void doPeriodicReporting() throws MessagingException, IOException {
     walletService.sendPeriodicEmail();
   }
