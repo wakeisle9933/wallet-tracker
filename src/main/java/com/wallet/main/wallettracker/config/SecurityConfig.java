@@ -1,5 +1,6 @@
 package com.wallet.main.wallettracker.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+  @Value("${security.username}")
+  private String username;
+
+  @Value("${security.password}")
+  private String password;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -40,8 +47,8 @@ public class SecurityConfig {
   @Bean
   public UserDetailsService userDetailsService() {
     UserDetails user = User.builder()
-        .username("user")
-        .password(passwordEncoder().encode("password"))
+        .username(username)
+        .password(passwordEncoder().encode(password))
         .roles("USER")
         .build();
     return new InMemoryUserDetailsManager(user);
@@ -50,6 +57,7 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();  // BCryptPasswordEncoder를 사용
+    // 하하
   }
 
 }
