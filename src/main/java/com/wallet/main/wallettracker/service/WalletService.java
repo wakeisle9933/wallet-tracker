@@ -1,12 +1,13 @@
 package com.wallet.main.wallettracker.service;
 
-import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.model.BaseCompareModel;
+import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.model.BaseResultModel;
 import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
+import com.wallet.main.wallettracker.util.StringUtil;
 import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -18,6 +19,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -358,6 +362,35 @@ public class WalletService {
     return BaseResultModel.builder().contractAddress(externalBaseModel.getWalletAddress())
         .nickname(internalBaseModel.getNickname())
         .baseCompareModelList(compareModelList).build();
+  }
+
+  public List<String> getHoldersByContract(String contract) throws IOException, MessagingException {
+    // 디렉토리 내의 모든 파일을 리스트업
+    List<Path> files = Files.list(Paths.get(FilePathConstants.WALLET_FOLDER_PATH))
+        .filter(Files::isRegularFile)
+        .filter(path -> path.toString().endsWith("_base"))
+        .filter(path -> !path.toString().contains("Nickname_base")) // Nickname_base 파일 제외 (이건 샘플)
+        .toList();
+
+    List<String> holderList = new ArrayList<>();
+    for (Path file : files) {
+      List<String> matchedLines = Files.lines(file)
+          .filter(line -> line.contains(contract))
+          .toList();
+
+      // 파일명에서 기본 이름 추출
+      String fileName = file.getFileName().toString().replaceAll("_base", "");
+
+      for (String line : matchedLines) {
+        WalletModel wallet = WalletLineParseUtil.parse(line);
+        if (wallet != null && contract.equals(wallet.getContractAddress())) {
+          holderList.add(fileName + " " + StringUtil.addThousandSeparators(wallet.getAmount()));
+        }
+      }
+    }
+
+    return holderList;
+
   }
 
   private static boolean isValidNumber(String str) {

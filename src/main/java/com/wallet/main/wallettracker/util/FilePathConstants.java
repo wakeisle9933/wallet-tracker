@@ -16,4 +16,8 @@ public class FilePathConstants {
       "src" + File.separator + "main" + File.separator + "resources" + File.separator + "filter"
           + File.separator + "FilterKeyword";
 
+  public static final String WALLET_FOLDER_PATH =
+      "src" + File.separator + "main" + File.separator + "resources" + File.separator + "wallet";
+
+
 }
