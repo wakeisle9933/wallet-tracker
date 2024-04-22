@@ -19,5 +19,8 @@ public class FilePathConstants {
   public static final String WALLET_FOLDER_PATH =
       "src" + File.separator + "main" + File.separator + "resources" + File.separator + "wallet";
 
+  public static final String CHROMEDRIVER_FOLDER_PATH =
+      "src" + File.separator + "main" + File.separator + "resources" + File.separator
+          + "chromedriver";
 
 }
