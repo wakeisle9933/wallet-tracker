@@ -76,7 +76,7 @@ public class WalletService {
     }
 
     sendDailyCheckEmail(baseResultModelList);
-
+    
   }
 
   public void sendDailyCheckEmail(List<BaseResultModel> baseResultModelList)
@@ -227,15 +227,24 @@ public class WalletService {
           htmlContent.append("<tr>");
           htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
           htmlContent.append("<td>").append(baseCompareModel.getStatus()).append("</td>");
+
+          String price = priceService.getMoralisPriceByContract(
+              baseCompareModel.getContractAddress());
+
+          String alignStyle;
+          if (price.contains("-")) {
+            alignStyle = "center";
+          } else { // 숫자만 있는 경우
+            alignStyle = "right";
+          }
+
           if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY ||
               baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
                 .append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getTotalQuantity())
-                .append("</td>")
-                .append("<td style='text-align: right;'>")
-                .append(
-                    priceService.getMoralisPriceByContract(baseCompareModel.getContractAddress()))
+                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append(price)
                 .append("</td>");
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
             String dexToolsUrl =
@@ -250,10 +259,8 @@ public class WalletService {
                 .append("</td>")
                 .append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getProceedQuantity())
-                .append("</td>")
-                .append("<td style='text-align: right;'>")
-                .append(
-                    priceService.getMoralisPriceByContract(baseCompareModel.getContractAddress()))
+                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append(price)
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getTotalQuantity())

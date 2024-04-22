@@ -23,4 +23,8 @@ public class FilePathConstants {
       "src" + File.separator + "main" + File.separator + "resources" + File.separator
           + "chromedriver";
 
+  public static final String TRACKINGLIST_PATH =
+      "src" + File.separator + "main" + File.separator + "resources" + File.separator
+          + "tracking" + File.separator + "TrackingList";
+
 }
