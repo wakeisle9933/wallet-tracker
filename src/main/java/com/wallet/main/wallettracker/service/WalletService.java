@@ -39,6 +39,7 @@ public class WalletService {
 
   private final JavaMailSender mailSender;
   private final SeleniumService seleniumService;
+  private final PriceService priceService;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
@@ -218,7 +219,7 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Estimate Price</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
           htmlContent.append("<tr>");
@@ -229,6 +230,10 @@ public class WalletService {
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
                 .append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getTotalQuantity())
+                .append("</td>")
+                .append("<td style='text-align: right;'>")
+                .append(
+                    priceService.getMoralisPriceByContract(baseCompareModel.getContractAddress()))
                 .append("</td>");
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
             String dexToolsUrl =
@@ -243,6 +248,10 @@ public class WalletService {
                 .append("</td>")
                 .append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getProceedQuantity())
+                .append("</td>")
+                .append("<td style='text-align: right;'>")
+                .append(
+                    priceService.getMoralisPriceByContract(baseCompareModel.getContractAddress()))
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
                 .append(baseCompareModel.getTotalQuantity())
@@ -390,7 +399,12 @@ public class WalletService {
     }
 
     return holderList;
+  }
 
+  public List<String> getWalletPortfolio(String nickname) throws IOException, MessagingException {
+    String filename = nickname + "_base";
+    Path path = Paths.get(FilePathConstants.WALLET_FOLDER_PATH, filename);
+    return Files.readAllLines(path);
   }
 
   private static boolean isValidNumber(String str) {

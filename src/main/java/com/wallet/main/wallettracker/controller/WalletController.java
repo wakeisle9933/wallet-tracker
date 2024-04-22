@@ -38,5 +38,11 @@ public class WalletController {
     return ResponseEntity.ok(holderList);
   }
 
+  @GetMapping("/get-wallet-portfolio")
+  public ResponseEntity<List<String>> getWalletPortfolio(@RequestParam String nickname)
+      throws MessagingException, IOException {
+    List<String> holderList = walletService.getWalletPortfolio(nickname);
+    return ResponseEntity.ok(holderList);
+  }
 
 }
