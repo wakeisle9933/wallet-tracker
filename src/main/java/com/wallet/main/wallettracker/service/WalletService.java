@@ -76,7 +76,7 @@ public class WalletService {
     }
 
     sendDailyCheckEmail(baseResultModelList);
-    
+
   }
 
   public void sendDailyCheckEmail(List<BaseResultModel> baseResultModelList)
@@ -393,7 +393,7 @@ public class WalletService {
     List<String> holderList = new ArrayList<>();
     for (Path file : files) {
       List<String> matchedLines = Files.lines(file)
-          .filter(line -> line.contains(contract))
+          .filter(line -> line.toLowerCase().contains(contract.toLowerCase()))
           .toList();
 
       // 파일명에서 기본 이름 추출
@@ -401,7 +401,8 @@ public class WalletService {
 
       for (String line : matchedLines) {
         WalletModel wallet = WalletLineParseUtil.parse(line);
-        if (wallet != null && contract.equals(wallet.getContractAddress())) {
+        if (wallet != null && contract
+            .equalsIgnoreCase(wallet.getContractAddress())) {
           holderList.add(fileName + " " + StringUtil.addThousandSeparators(wallet.getAmount()));
         }
       }
