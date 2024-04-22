@@ -37,6 +37,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class WalletService {
 
+  private static final String EXCLUDE_FILE = "Nickname_base";
+
   private final JavaMailSender mailSender;
   private final SeleniumService seleniumService;
   private final PriceService priceService;
@@ -405,6 +407,33 @@ public class WalletService {
     String filename = nickname + "_base";
     Path path = Paths.get(FilePathConstants.WALLET_FOLDER_PATH, filename);
     return Files.readAllLines(path);
+  }
+
+  public boolean resetWalletDirectory() {
+    Path dirPath = Paths.get(FilePathConstants.WALLET_FOLDER_PATH);
+
+    if (!Files.exists(dirPath)) {
+      log.warn("Wallet directory does not exist: {}", dirPath);
+      return false;
+    }
+
+    try {
+      Files.list(dirPath)
+          .filter(path -> !path.getFileName().toString().equals(EXCLUDE_FILE))
+          .forEach(path -> {
+            try {
+              Files.delete(path);
+              log.debug("Deleted file: {}", path);
+            } catch (IOException e) {
+              log.error("Could not delete file: {}", path, e);
+            }
+          });
+      log.info("Wallet directory has been reset successfully!");
+      return true;
+    } catch (IOException e) {
+      log.error("Error occurred while resetting wallet directory", e);
+      return false;
+    }
   }
 
   private static boolean isValidNumber(String str) {

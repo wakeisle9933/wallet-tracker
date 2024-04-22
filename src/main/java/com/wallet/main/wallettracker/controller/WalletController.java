@@ -5,7 +5,9 @@ import jakarta.mail.MessagingException;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +45,18 @@ public class WalletController {
       throws MessagingException, IOException {
     List<String> holderList = walletService.getWalletPortfolio(nickname);
     return ResponseEntity.ok(holderList);
+  }
+
+  @DeleteMapping("/reset-wallet-directory")
+  public ResponseEntity<String> resetWalletDirectory() {
+    boolean isReset = walletService.resetWalletDirectory();
+
+    if (isReset) {
+      return ResponseEntity.ok("All files in the Wallet path have been initialized.");
+    } else {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to initialized wallet.");
+    }
   }
 
 }
