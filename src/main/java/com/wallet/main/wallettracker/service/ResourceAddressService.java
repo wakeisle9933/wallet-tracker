@@ -37,11 +37,42 @@ public class ResourceAddressService {
       }
     } catch (IOException e) {
       e.printStackTrace();
-      log.error("Error reading the email file", e);
+      log.error("Error reading the Address file", e);
     }
 
     return addresses;
   }
+
+  public String ExistAddress(String address) {
+    List<String> addresses = new ArrayList<>();
+
+    try {
+      File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
+
+      if (file.exists() && file.isFile() && file.canRead()) {
+        // 파일 내용 읽기
+        String content = new String(Files.readAllBytes(file.toPath()));
+
+        if (!content.trim().isEmpty()) {
+          addresses = Arrays.asList(content.split("\\r?\\n"));
+        }
+
+        for (String adr : addresses) {
+          String[] addressNickname = adr.split(" ");
+          if (address.equals(addressNickname[0])) {
+            return addressNickname[1];
+          }
+        }
+
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      log.error("Error reading the Address file", e);
+    }
+
+    return "Not Exist";
+  }
+
 
   public boolean addAddressToFile(String address, String nickname) {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);

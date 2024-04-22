@@ -31,6 +31,17 @@ public class ResourceAddressController {
     return sb.toString();
   }
 
+  @GetMapping("/exist-address")
+  public ResponseEntity<String> requestExistAddress(String address) {
+    String name = resourceAddressService.ExistAddress(address);
+
+    if (!name.isEmpty()) {
+      return ResponseEntity.ok(name);
+    } else {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Not Exist Address");
+    }
+  }
+
   @PostMapping("/add-address")
   public ResponseEntity<String> requestAddAddressToFile(@RequestBody AddressDto addressDto) {
     boolean isAdded = resourceAddressService.addAddressToFile(addressDto.getAddress(),
