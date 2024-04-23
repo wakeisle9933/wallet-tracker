@@ -2,9 +2,15 @@
 <img width="464" alt="intro-0423" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/2a14c0b8-1656-4d3b-b3d1-a4647193867b">
 <img width="464" alt="intro2-0423" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/f1ce24a8-d951-4491-8e62-70c022c91ee1">
 
-# **Wallet Tracker by My Codegate**
+# **🔍 Wallet Tracker by My Codegate**
 
-**Track your wallet addresses and transactions for free, without having to pay $200 per chain every month!**
+**✨Features**
+
+**🆓 Track your portfolio and balances for free without the need for paid APIs!**  
+**📧 Receive notifications every 10 minutes via email!**  
+**🧑‍🚀 Manage various features easily with Postman! It's already set up, so there's no need for additional configuration!**  
+**🛑 Automatically blocks new scams, keeping you safe from the threat of fraud!**  
+**🐋 Dockerfile included for easy setup!**  
 
 For the full development log, please refer to the following link. [Development Log](https://mycodegate.com/1100/)
 
@@ -15,7 +21,7 @@ For the full development log, please refer to the following link. [Development L
 4. Easily monitor changes to your wallet via email !
 
 # 🚀 Running with Docker
-**This project provides a Dockerfile for easy deployment. 🐳**
+**🐳 This project provides a Dockerfile for easy deployment. 🛠️**
 1. Build the Docker image  
    ```docker build -t wallet-tracker .```
 3. Run the tracker in detached mode  
