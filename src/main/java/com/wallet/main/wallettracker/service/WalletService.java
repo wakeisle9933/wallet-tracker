@@ -242,7 +242,7 @@ public class WalletService {
               baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
                 .append("<td style='text-align: right;'>")
-                .append(baseCompareModel.getTotalQuantity())
+                .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
                 .append(price)
                 .append("</td>");
@@ -255,15 +255,17 @@ public class WalletService {
                 .append("</a></td>");
           } else {
             htmlContent.append("<td style='text-align: right;'>")
-                .append(baseCompareModel.getPreviousQuantity())
+                .append(
+                    StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getPreviousQuantity()))
                 .append("</td>")
                 .append("<td style='text-align: right;'>")
-                .append(baseCompareModel.getProceedQuantity())
+                .append(
+                    StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
                 .append(price)
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
-                .append(baseCompareModel.getTotalQuantity())
+                .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
                 .append("</td>");
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
