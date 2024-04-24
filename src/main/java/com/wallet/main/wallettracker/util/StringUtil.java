@@ -41,6 +41,20 @@ public class StringUtil {
     return price;
   }
 
+  public static String getTotalUsdAmount(String quantity, String price) {
+    String numericQuantity = quantity.replaceAll(",", "");
+    if (!price.equals("-")) {
+      BigDecimal bigDecimalQuantity = new BigDecimal(numericQuantity);
+      BigDecimal bigDecimalPrice = new BigDecimal(price);
+      if (bigDecimalPrice.compareTo(BigDecimal.ZERO) > 0) {
+        DecimalFormat formatter = new DecimalFormat("#,##0.#####");
+        BigDecimal result = bigDecimalQuantity.multiply(bigDecimalPrice);
+        return "$" + formatter.format(result);
+      }
+    }
+    return "-";
+  }
+
   private static String getSubscript(int zeroCount) {
     // 5 미만은 미호출
     switch (zeroCount) {

@@ -221,7 +221,7 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Estimate Price</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
           htmlContent.append("<tr>");
@@ -230,7 +230,7 @@ public class WalletService {
 
           String price = priceService.getMoralisPriceByContract(
               baseCompareModel.getContractAddress());
-
+          String priceWithSubscript = StringUtil.formatPriceWithSubscript(price);
           String alignStyle;
           if (price.contains("-")) {
             alignStyle = "center";
@@ -244,7 +244,10 @@ public class WalletService {
                 .append("<td style='text-align: right;'>")
                 .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
-                .append(price)
+                .append(priceWithSubscript)
+                .append("</td>")
+                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append(StringUtil.getTotalUsdAmount(baseCompareModel.getTotalQuantity(), price))
                 .append("</td>");
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
             String dexToolsUrl =
@@ -262,7 +265,10 @@ public class WalletService {
                 .append(
                     StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
-                .append(price)
+                .append(priceWithSubscript)
+                .append("</td>")
+                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append(StringUtil.getTotalUsdAmount(baseCompareModel.getProceedQuantity(), price))
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
                 .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))

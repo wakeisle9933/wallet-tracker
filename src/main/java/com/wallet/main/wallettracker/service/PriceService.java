@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.FilePathConstants;
-import com.wallet.main.wallettracker.util.StringUtil;
 import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import java.io.IOException;
 import java.net.URI;
@@ -51,7 +50,7 @@ public class PriceService {
         if (Objects.equals(jsonNode.get("usdPriceFormatted").asText(), "0.0")) {
           return "-";
         }
-        return StringUtil.formatPriceWithSubscript(jsonNode.get("usdPriceFormatted").asText());
+        return jsonNode.get("usdPriceFormatted").asText();
       }
     } catch (Exception e) {
       log.error("Error during API request: " + e.getMessage());
