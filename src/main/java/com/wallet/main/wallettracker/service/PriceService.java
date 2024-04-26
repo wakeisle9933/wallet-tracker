@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.FilePathConstants;
+import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import java.io.IOException;
 import java.net.URI;
@@ -32,6 +33,11 @@ public class PriceService {
   private String api;
 
   public String getMoralisPriceByContract(String contract) {
+    // Base ETH를 WETH와 동일하게 처리
+    if (contract.equals(StringConstants.BASE_ETH_ADDRESS)) {
+      contract = "0x4200000000000000000000000000000000000006";
+    }
+
     HttpClient client = HttpClient.newHttpClient();
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(

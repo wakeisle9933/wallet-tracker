@@ -2,6 +2,7 @@ package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
+import com.wallet.main.wallettracker.util.StringConstants;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -73,7 +74,7 @@ public class SeleniumService {
         // ETH는 Token이 아니므로 개별처리
         nameList.add("BASE-ETH");
         quantityList.add(driver.findElement(By.cssSelector("div.flex.flex-col > span")).getText());
-        contractAddressList.add("EthereumHasNoContractAddress");
+        contractAddressList.add(StringConstants.BASE_ETH_ADDRESS);
 
         // Token 처리
         for (WebElement tokenElement : tokenElements) {

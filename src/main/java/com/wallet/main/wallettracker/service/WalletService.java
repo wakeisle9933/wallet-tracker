@@ -7,6 +7,7 @@ import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
+import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
 import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import jakarta.mail.MessagingException;
@@ -221,12 +222,21 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Current Processed</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
+          String textColor;
+          if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY
+              || baseCompareModel.getStatus() == StatusConstants.BOUGHT) {
+            textColor = "color:red;";
+          } else {
+            textColor = "color:blue;";
+          }
           htmlContent.append("<tr>");
           htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
-          htmlContent.append("<td>").append(baseCompareModel.getStatus()).append("</td>");
+          htmlContent.append("<td style='text-align: center; font-weight:bold;").append(textColor)
+              .append("'>")
+              .append(baseCompareModel.getStatus()).append("</td>");
 
           String price = priceService.getMoralisPriceByContract(
               baseCompareModel.getContractAddress());
@@ -241,33 +251,43 @@ public class WalletService {
           if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY ||
               baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
-                .append("<td style='text-align: right;'>")
+                .append("<td style='text-align: right; font-weight:bold;").append(textColor)
+                .append("'>")
                 .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
                 .append(priceWithSubscript)
                 .append("</td>")
-                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append("</td>").append("<td style='text-align:").append(alignStyle)
+                .append("; font-weight:bold;")
+                .append(textColor).append("'>")
                 .append(StringUtil.getTotalUsdAmount(baseCompareModel.getTotalQuantity(), price))
                 .append("</td>");
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
                     + baseCompareModel.getContractAddress();
-            htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
-                .append("</a></td>");
+            if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                  .append("</a></td>");
+            } else {
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+            }
           } else {
             htmlContent.append("<td style='text-align: right;'>")
                 .append(
                     StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getPreviousQuantity()))
                 .append("</td>")
-                .append("<td style='text-align: right;'>")
+                .append("<td style='text-align: right; font-weight:bold;").append(textColor)
+                .append("'>")
                 .append(
                     StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
                 .append(priceWithSubscript)
                 .append("</td>")
-                .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
+                .append("</td>").append("<td style='text-align:").append(alignStyle)
+                .append("; font-weight:bold;")
+                .append(textColor).append("'>")
                 .append(StringUtil.getTotalUsdAmount(baseCompareModel.getProceedQuantity(), price))
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
@@ -276,9 +296,13 @@ public class WalletService {
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
                     + baseCompareModel.getContractAddress();
-            htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-                .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
-                .append("</a></td>");
+            if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                  .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                  .append("</a></td>");
+            } else {
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+            }
           }
           htmlContent.append("</tr>");
         }
