@@ -13,6 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -39,8 +40,9 @@ public class SeleniumService {
     options.addArguments("--headless");
     options.addArguments("--no-sandbox");
     options.addArguments("--disable-dev-shm-usage");
-    String userDir = System.getProperty("user.dir") + "/src/main/resources/chromedriver/"
-        + System.currentTimeMillis();
+    String userDir =
+        System.getProperty("user.dir") + "/src/main/resources/chromedriver/" + UUID.randomUUID()
+            .toString();
     options.addArguments("--user-data-dir=" + userDir);
 
     for (int retry = 0; retry < maxRetries; retry++) {
