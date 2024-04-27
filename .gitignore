@@ -43,3 +43,5 @@ out/
 !/src/main/resources/wallet/Nickname_base
 /src/main/resources/chromedriver/*
 !/src/main/resources/chromedriver/ChromeDriverProfileWillCreate
+# SQLite database file
+*.db
