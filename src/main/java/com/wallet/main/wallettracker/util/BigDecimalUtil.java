@@ -11,4 +11,19 @@ public class BigDecimalUtil {
     return formatter.format(value);
   }
 
+  public static BigDecimal formatStringToBigDecimal(String s) {
+    if (s != null) {
+      try {
+        if (s.isEmpty() || s.equals("-")) {
+          return BigDecimal.ZERO;
+        }
+        s = s.replace(",", "");
+        return new BigDecimal(s);
+      } catch (Exception e) {
+        return BigDecimal.ZERO;
+      }
+    }
+    return BigDecimal.ZERO;
+  }
+
 }
