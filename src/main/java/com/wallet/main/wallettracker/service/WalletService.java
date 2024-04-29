@@ -1,8 +1,10 @@
 package com.wallet.main.wallettracker.service;
 
+import com.wallet.main.wallettracker.entity.WalletHistory;
 import com.wallet.main.wallettracker.model.BaseCompareModel;
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.model.BaseResultModel;
+import com.wallet.main.wallettracker.model.MailModel;
 import com.wallet.main.wallettracker.model.WalletModel;
 import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
@@ -23,6 +25,8 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +47,8 @@ public class WalletService {
   private final JavaMailSender mailSender;
   private final SeleniumService seleniumService;
   private final PriceService priceService;
+  private final WalletHistoryService walletHistoryService;
+  private final MailService mailService;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
@@ -222,7 +228,7 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Average Unit Price</th><th>Contract Address(Move to Dextools)</th><th>Scam Check</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
           String textColor;
@@ -232,6 +238,7 @@ public class WalletService {
           } else {
             textColor = "color:blue;";
           }
+
           htmlContent.append("<tr>");
           htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
           htmlContent.append("<td style='text-align: center; font-weight:bold;").append(textColor)
@@ -241,6 +248,48 @@ public class WalletService {
           String price = priceService.getMoralisPriceByContract(
               baseCompareModel.getContractAddress());
           String priceWithSubscript = StringUtil.formatPriceWithSubscript(price);
+          String totalBalance;
+          if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY) {
+            totalBalance = baseCompareModel.getProceedQuantity();
+          } else if (baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
+            totalBalance = "-";
+          } else {
+            totalBalance = baseCompareModel.getTotalQuantity();
+          }
+
+          BigDecimal averageUnitPrice = walletHistoryService.calculateAveragePrice(
+              baseResultModel.getContractAddress(), baseCompareModel, price);
+          walletHistoryService.save(
+              WalletHistory.builder().address(baseResultModel.getContractAddress())
+                  .nickname(baseResultModel.getNickname()).status(baseCompareModel.getStatus())
+                  .currency(baseCompareModel.getName())
+                  .previous_balance(BigDecimalUtil.formatStringToBigDecimal(
+                      baseCompareModel.getPreviousQuantity()))
+                  .trade_volume(BigDecimalUtil.formatStringToBigDecimal(
+                      baseCompareModel.getProceedQuantity()))
+                  .price(priceWithSubscript)
+                  .usd_value(
+                      StringUtil.getTotalUsdAmount(baseCompareModel.getProceedQuantity(), price))
+                  .total_balance(
+                      BigDecimalUtil.formatStringToBigDecimal(totalBalance))
+                  .average_price(averageUnitPrice)
+                  .contract_address(baseCompareModel.getContractAddress())
+                  .created_date(LocalDateTime.now()
+                      .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                  .build());
+
+          if (baseCompareModel.getStatus().equals(StatusConstants.SOLD_ALL)) {
+            List<WalletHistory> walletHistoryList = walletHistoryService.getWalletHistoryByAddressAndContractAddress(
+                baseResultModel.getContractAddress(), baseCompareModel.getContractAddress());
+            if (!walletHistoryList.isEmpty()) {
+              mailService.sendMail(MailModel.builder().name(walletHistoryList.get(0).getNickname())
+                  .subject(walletHistoryList.get(0).getNickname() + " - " + walletHistoryList.get(0)
+                      .getCurrency() + "Transaction history summary")
+                  .htmlContent(mailService.createHTMLTransactionSummary(
+                      walletHistoryList)).build());
+            }
+          }
+
           String alignStyle;
           if (price.contains("-")) {
             alignStyle = "center";
@@ -253,25 +302,45 @@ public class WalletService {
             htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
                 .append("<td style='text-align: right; font-weight:bold;").append(textColor)
                 .append("'>")
-                .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
+                .append(
+                    StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
                 .append("</td>").append("<td style='text-align:").append(alignStyle).append(";'>")
                 .append(priceWithSubscript)
                 .append("</td>")
                 .append("</td>").append("<td style='text-align:").append(alignStyle)
                 .append("; font-weight:bold;")
                 .append(textColor).append("'>")
-                .append(StringUtil.getTotalUsdAmount(baseCompareModel.getTotalQuantity(), price))
+                .append(StringUtil.getTotalUsdAmount(baseCompareModel.getProceedQuantity(), price))
                 .append("</td>");
-            htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+
+            if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY) {
+              htmlContent.append("<td style='text-align: right;'>")
+                  .append(
+                      StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
+                  .append("</td>")
+                  .append("<td style='text-align: right; font-weight:bold;'>")
+                  .append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
+                  .append("</td>");
+            } else {
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
+                  .append("<td style='text-align: center;'>").append("-").append("</td>");
+            }
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
+                    + baseCompareModel.getContractAddress();
+            String tokenSnifferUrl =
+                "https://tokensniffer.com/token/base/"
                     + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
               htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                  .append("</a></td>")
+                  .append("<td><a href=\"").append(tokenSnifferUrl)
+                  .append("\" target=\"_blank\">").append("Link")
                   .append("</a></td>");
             } else {
-              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
+                  .append("<td style='text-align: center;'>").append("-").append("</td>");
             }
           } else {
             htmlContent.append("<td style='text-align: right;'>")
@@ -292,16 +361,26 @@ public class WalletService {
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
                 .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
+                .append("</td>")
+                .append("<td style='text-align: right; font-weight:bold;'>")
+                .append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
                 .append("</td>");
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
                     + baseCompareModel.getContractAddress();
+            String tokenSnifferUrl =
+                "https://tokensniffer.com/token/base/"
+                    + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
               htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                  .append("</a></td>")
+                  .append("<td><a href=\"").append(tokenSnifferUrl)
+                  .append("\" target=\"_blank\">").append("Link")
                   .append("</a></td>");
             } else {
-              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
+                  .append("<td style='text-align: center;'>").append("-").append("</td>");
             }
           }
           htmlContent.append("</tr>");
@@ -393,7 +472,7 @@ public class WalletService {
       } else {
         compareModelList.add(BaseCompareModel.builder().name(name)
             .status(StatusConstants.NEW_ENTRY)
-            .totalQuantity(BigDecimalUtil.format(externalMap.get(contract)))
+            .proceedQuantity(BigDecimalUtil.format(externalMap.get(contract)))
             .contractAddress(contract).build());
       }
     }
@@ -404,7 +483,7 @@ public class WalletService {
             .get(internalBaseModel.getContractAddress().indexOf(contract));
         compareModelList.add(BaseCompareModel.builder().name(name)
             .status(StatusConstants.SOLD_ALL)
-            .totalQuantity(BigDecimalUtil.format(internalMap.get(contract)))
+            .proceedQuantity(BigDecimalUtil.format(internalMap.get(contract)))
             .contractAddress(contract).build());
       }
     }

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import org.apache.commons.lang3.StringUtils;
 
 public class StringUtil {
 
@@ -53,6 +54,20 @@ public class StringUtil {
       }
     }
     return "-";
+  }
+
+  public static String parseUsdAmount(String usdValue) {
+    BigDecimal value = new BigDecimal(usdValue);
+    DecimalFormat formatter = new DecimalFormat("#,##0.#####");
+    return "$" + formatter.format(value);
+  }
+
+  public static BigDecimal parseTotalUsdAmount(String formattedAmount) {
+    if (StringUtils.isEmpty(formattedAmount) || formattedAmount.equals("-")) {
+      return BigDecimal.ZERO;
+    }
+    String numericPart = formattedAmount.replace("$", "").replace(",", "");
+    return new BigDecimal(numericPart);
   }
 
   private static String getSubscript(int zeroCount) {
