@@ -65,15 +65,19 @@ public class MailService {
           .append("</td>")
           .append("<td style='text-align: center; font-weight:bold;").append(textColor)
           .append("'>").append(walletHistory.getStatus()).append("</td>")
-          .append("<td style='text-align: right;'>").append(walletHistory.getPrevious_balance())
+          .append("<td style='text-align: right;'>").append(
+              StringUtil.formatNumberWithKoreanDesc(walletHistory.getPrevious_balance().toString()))
           .append("</td>")
           .append("<td style='text-align: right; font-weight:bold;").append(textColor)
-          .append("'>").append(walletHistory.getTrade_volume()).append("</td>")
+          .append("'>")
+          .append(StringUtil.formatNumberWithKoreanDesc(walletHistory.getTrade_volume().toString()))
+          .append("</td>")
           .append("<td style='text-align: right;'>").append(walletHistory.getPrice())
           .append("</td>")
           .append("<td style='text-align: right; font-weight:bold;").append(textColor)
           .append("'>").append(walletHistory.getUsd_value()).append("</td>")
-          .append("<td style='text-align: right;'>").append(walletHistory.getTotal_balance())
+          .append("<td style='text-align: right;'>").append(
+              StringUtil.formatNumberWithKoreanDesc(walletHistory.getTotal_balance().toString()))
           .append("</td>")
           .append("<td style='text-align: right;'>").append(walletHistory.getAverage_price())
           .append("</td>");

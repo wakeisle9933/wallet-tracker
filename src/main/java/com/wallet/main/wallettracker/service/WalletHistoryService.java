@@ -92,8 +92,8 @@ public class WalletHistoryService {
     int lastNewEntryIndex = getLastNewEntryIndex(walletHistoryList);
     int lastSoldAllIndex = getLastSoldAllIndex(walletHistoryList);
 
-    if (lastNewEntryIndex == -1 && lastSoldAllIndex != -1
-        && lastNewEntryIndex > lastSoldAllIndex) {
+    if (lastNewEntryIndex == -1 || lastSoldAllIndex == -1
+        || lastNewEntryIndex > lastSoldAllIndex) {
       return Collections.emptyList();
     }
 
@@ -101,7 +101,7 @@ public class WalletHistoryService {
   }
 
   private int getLastNewEntryIndex(List<WalletHistory> walletHistoryList) {
-    for (int i = 0; i < walletHistoryList.size(); i++) {
+    for (int i = walletHistoryList.size() - 1; i > -1; i--) {
       if ("NEW ENTRY" .equals(walletHistoryList.get(i).getStatus())) {
         return i;
       }
@@ -110,7 +110,7 @@ public class WalletHistoryService {
   }
 
   private int getLastSoldAllIndex(List<WalletHistory> walletHistoryList) {
-    for (int i = 0; i < walletHistoryList.size(); i++) {
+    for (int i = walletHistoryList.size() - 1; i > -1; i--) {
       if ("SOLD ALL" .equals(walletHistoryList.get(i).getStatus())) {
         return i;
       }
