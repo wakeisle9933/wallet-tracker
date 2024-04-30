@@ -32,6 +32,11 @@ public class PriceService {
   @Value("${moralis.api}")
   private String api;
 
+  // API 변경 대비
+  public String getPriceByContract(String contract) {
+    return getMoralisPriceByContract(contract);
+  }
+
   public String getMoralisPriceByContract(String contract) {
     // Base ETH를 WETH와 동일하게 처리
     if (contract.equals(StringConstants.BASE_ETH_ADDRESS)) {
@@ -76,7 +81,7 @@ public class PriceService {
 
         modelList.add(
             WalletModel.builder().name(model.getName())
-                .amount(getMoralisPriceByContract(model.getContractAddress()))
+                .amount(getPriceByContract(model.getContractAddress()))
                 .contractAddress(model.getContractAddress())
                 .build());
 

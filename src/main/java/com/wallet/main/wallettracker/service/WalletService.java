@@ -245,7 +245,7 @@ public class WalletService {
               .append("'>")
               .append(baseCompareModel.getStatus()).append("</td>");
 
-          String price = priceService.getMoralisPriceByContract(
+          String price = priceService.getPriceByContract(
               baseCompareModel.getContractAddress());
           String priceWithSubscript = StringUtil.formatPriceWithSubscript(price);
           String totalBalance;
