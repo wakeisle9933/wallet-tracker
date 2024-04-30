@@ -82,6 +82,11 @@ public class WalletHistoryService {
 
   public List<WalletHistory> getWalletHistoryByAddressAndContractAddress(String address,
       String contractAddress) {
+    // 이더리움은 계산하지 않음
+    if (StringConstants.BASE_ETH_ADDRESS.equals(contractAddress)) {
+      return Collections.emptyList();
+    }
+
     List<WalletHistory> walletHistoryList = repository.findByAddressAndContractAddressOrderByCreatedDateAsc(
         address, contractAddress);
 
@@ -89,7 +94,7 @@ public class WalletHistoryService {
       return Collections.emptyList();
     }
 
-    int lastNewEntryIndex = getLastNewEntryIndex(walletHistoryList);
+    int lastNewEntryIndex = findLastNewEntryIndexBeforeLastSoldAll(walletHistoryList);
     int lastSoldAllIndex = getLastSoldAllIndex(walletHistoryList);
 
     if (lastNewEntryIndex == -1 || lastSoldAllIndex == -1
@@ -100,9 +105,18 @@ public class WalletHistoryService {
     return walletHistoryList.subList(lastNewEntryIndex, lastSoldAllIndex + 1);
   }
 
-  private int getLastNewEntryIndex(List<WalletHistory> walletHistoryList) {
+  private int findLastNewEntryIndexBeforeLastSoldAll(List<WalletHistory> walletHistoryList) {
+    boolean state = false;
     for (int i = walletHistoryList.size() - 1; i > -1; i--) {
-      if ("NEW ENTRY" .equals(walletHistoryList.get(i).getStatus())) {
+      if (state == true && "SOLD ALL".equals(walletHistoryList.get(i).getStatus())) {
+        return -1;
+      }
+
+      if ("SOLD ALL".equals(walletHistoryList.get(i).getStatus())) {
+        state = true;
+      }
+
+      if ("NEW ENTRY".equals(walletHistoryList.get(i).getStatus())) {
         return i;
       }
     }
@@ -111,7 +125,7 @@ public class WalletHistoryService {
 
   private int getLastSoldAllIndex(List<WalletHistory> walletHistoryList) {
     for (int i = walletHistoryList.size() - 1; i > -1; i--) {
-      if ("SOLD ALL" .equals(walletHistoryList.get(i).getStatus())) {
+      if ("SOLD ALL".equals(walletHistoryList.get(i).getStatus())) {
         return i;
       }
     }

@@ -189,7 +189,17 @@ public class WalletService {
             .contractAddress(contractAddressList)
             .build();
 
-        baseResultModelList.add(compareBase(internalBaseModel, externalCompareBase));
+        BaseResultModel baseResultModel = compareBase(internalBaseModel, externalCompareBase);
+
+        // 사이트 에러 시 대응 코드
+        // 20개 이상 변동이 있을 경우에는 파일만 갱신하고 이메일 발송 X
+        if (baseResultModel.getBaseCompareModelList().size() > 20) {
+          log.info(
+              baseResultModel.getNickname()
+                  + ": Fluctuations of over 20 items detected, presumed to be temporary website errors, Email Will Not Send");
+        } else {
+          baseResultModelList.add(baseResultModel);
+        }
 
         // 이후 덮어 씌워서 중복 방지
         isNew(nicknameFile, externalCompareBase, true);
