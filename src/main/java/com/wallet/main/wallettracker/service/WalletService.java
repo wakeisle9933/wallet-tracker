@@ -238,7 +238,7 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Average Unit Price</th><th>Contract Address(Move to Dextools)</th><th>Scam Check</th></tr>");
+            "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th><th>Scam Check</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
           String textColor;
@@ -255,7 +255,7 @@ public class WalletService {
               .append("'>")
               .append(baseCompareModel.getStatus()).append("</td>");
 
-          String price = priceService.getPriceByContract(
+          String price = priceService.getPriceByTokenAddress(
               baseCompareModel.getContractAddress());
           String priceWithSubscript = StringUtil.formatPriceWithSubscript(price);
           String totalBalance;
@@ -267,8 +267,7 @@ public class WalletService {
             totalBalance = baseCompareModel.getTotalQuantity();
           }
 
-          BigDecimal averageUnitPrice = walletHistoryService.calculateAveragePrice(
-              baseResultModel.getContractAddress(), baseCompareModel, price);
+          //String averageUnitPrice = walletHistoryService.calculateAveragePrice(baseResultModel.getContractAddress(), baseCompareModel, price);
           walletHistoryService.save(
               WalletHistory.builder().address(baseResultModel.getContractAddress())
                   .nickname(baseResultModel.getNickname()).status(baseCompareModel.getStatus())
@@ -282,7 +281,6 @@ public class WalletService {
                       StringUtil.getTotalUsdAmount(baseCompareModel.getProceedQuantity(), price))
                   .total_balance(
                       BigDecimalUtil.formatStringToBigDecimal(totalBalance))
-                  .average_price(averageUnitPrice)
                   .contract_address(baseCompareModel.getContractAddress())
                   .created_date(LocalDateTime.now()
                       .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
@@ -327,13 +325,13 @@ public class WalletService {
               htmlContent.append("<td style='text-align: right;'>")
                   .append(
                       StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
-                  .append("</td>")
-                  .append("<td style='text-align: right; font-weight:bold;'>")
-                  .append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
                   .append("</td>");
+              //.append("<td style='text-align: right; font-weight:bold;'>")
+              // .append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
+              //.append("</td>");
             } else {
-              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
-                  .append("<td style='text-align: center;'>").append("-").append("</td>");
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+              //.append("<td style='text-align: center;'>").append("-").append("</td>");
             }
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
@@ -349,8 +347,7 @@ public class WalletService {
                   .append("\" target=\"_blank\">").append("Link")
                   .append("</a></td>");
             } else {
-              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
-                  .append("<td style='text-align: center;'>").append("-").append("</td>");
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
             }
           } else {
             htmlContent.append("<td style='text-align: right;'>")
@@ -371,10 +368,10 @@ public class WalletService {
                 .append("</td>");
             htmlContent.append("<td style='text-align: right;'>")
                 .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
-                .append("</td>")
-                .append("<td style='text-align: right; font-weight:bold;'>")
-                .append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
                 .append("</td>");
+            //.append("<td style='text-align: right; font-weight:bold;'>")
+            //.append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
+            //.append("</td>");
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/base/pair-explorer/"
                     + baseCompareModel.getContractAddress();

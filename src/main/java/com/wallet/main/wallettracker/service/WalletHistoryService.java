@@ -6,7 +6,6 @@ import com.wallet.main.wallettracker.repository.WalletHistoryRepository;
 import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.StatusConstants;
 import com.wallet.main.wallettracker.util.StringConstants;
-import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
@@ -29,16 +28,14 @@ public class WalletHistoryService {
     return repository.findByAddressAndContractAddress(address, contractAddress);
   }
 
-
-  @Transactional
   public void save(WalletHistory walletHistory) {
     repository.save(walletHistory);
   }
 
-  public BigDecimal calculateAveragePrice(String address,
+  public String calculateAveragePrice(String address,
       BaseCompareModel baseCompareModel, String price) {
     if (baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
-      return BigDecimal.ZERO;
+      return BigDecimal.ZERO.toString();
     }
 
     String status = baseCompareModel.getStatus();
@@ -48,21 +45,22 @@ public class WalletHistoryService {
         baseCompareModel.getContractAddress());
 
     if (status.equals(StatusConstants.NEW_ENTRY)) {
-      return BigDecimalUtil.formatStringToBigDecimal(price);
+      return BigDecimalUtil.formatStringToBigDecimal(price).stripTrailingZeros().toPlainString();
     } else if (status.equals(StatusConstants.SOLD_ALL)) {
-      return BigDecimal.ZERO;
+      return BigDecimal.ZERO.toString();
     } else if (status.equals(StatusConstants.BOUGHT)) {
       if (lastEntry != null) {
         if (lastEntry.getStatus().equals(StatusConstants.NEW_ENTRY)) {
           BigDecimal prevBalance = lastEntry.getTotal_balance();
-          BigDecimal prevAveragePrice = lastEntry.getAverage_price();
+          BigDecimal prevAveragePrice = new BigDecimal(lastEntry.getAverage_price());
           BigDecimal proceedQuantity = BigDecimalUtil.formatStringToBigDecimal(
               baseCompareModel.getProceedQuantity());
           BigDecimal usdPrice = BigDecimalUtil.formatStringToBigDecimal(price);
           BigDecimal totalBalance = prevBalance.add(proceedQuantity);
           BigDecimal totalValue = prevBalance.multiply(prevAveragePrice)
               .add(proceedQuantity.multiply(usdPrice));
-          return totalValue.divide(totalBalance, 10, RoundingMode.DOWN);
+          return totalValue.divide(totalBalance, 10, RoundingMode.DOWN).stripTrailingZeros()
+              .toPlainString();
         }
       }
     } else if (status.equals(StatusConstants.SOLD)) {
@@ -77,7 +75,7 @@ public class WalletHistoryService {
       }
     }
 
-    return BigDecimal.ZERO;
+    return BigDecimal.ZERO.toString();
   }
 
   public List<WalletHistory> getWalletHistoryByAddressAndContractAddress(String address,
@@ -108,7 +106,7 @@ public class WalletHistoryService {
   private int findLastNewEntryIndexBeforeLastSoldAll(List<WalletHistory> walletHistoryList) {
     boolean state = false;
     for (int i = walletHistoryList.size() - 1; i > -1; i--) {
-      if (state == true && "SOLD ALL".equals(walletHistoryList.get(i).getStatus())) {
+      if (state && "SOLD ALL".equals(walletHistoryList.get(i).getStatus())) {
         return -1;
       }
 

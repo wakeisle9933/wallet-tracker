@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -44,7 +45,7 @@ public class MailService {
 
     htmlContent.append("<table border='1' cellpadding='5'>");
     htmlContent.append(
-        "<tr><th>Date</th><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Average Unit Price</th><th>Cumulative Investment</th><th>Profit</th></tr>");
+        "<tr><th>Date</th><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Cumulative Investment</th><th>Profit</th></tr>");
 
     BigDecimal totalInvestment = BigDecimal.ZERO;
     BigDecimal profit = BigDecimal.ZERO;
@@ -77,10 +78,10 @@ public class MailService {
           .append("<td style='text-align: right; font-weight:bold;").append(textColor)
           .append("'>").append(walletHistory.getUsd_value()).append("</td>")
           .append("<td style='text-align: right;'>").append(
-              StringUtil.formatNumberWithKoreanDesc(walletHistory.getTotal_balance().toString()))
-          .append("</td>")
-          .append("<td style='text-align: right;'>").append(walletHistory.getAverage_price())
-          .append("</td>");
+              StringUtil.formatNumberWithKoreanDesc(walletHistory.getTotal_balance().toString()));
+//          .append("</td>")
+//          .append("<td style='text-align: right;'>").append(walletHistory.getAverage_price())
+//          .append("</td>");
 
       if (walletHistory.getStatus().equals(StatusConstants.BOUGHT) || walletHistory.getStatus()
           .equals(StatusConstants.NEW_ENTRY)) {
@@ -104,6 +105,9 @@ public class MailService {
     htmlContent.append("</table><br>");
 
     BigDecimal netProfit = profit.subtract(totalInvestment);
+    BigDecimal profitPercentage = netProfit.divide(totalInvestment, 2, RoundingMode.HALF_UP)
+        .multiply(BigDecimal.valueOf(100));
+    String formattedPercentage = String.format("(%.2f%%)", profitPercentage);
     String resultColor = "color:#32CD32;";
     if (netProfit.compareTo(BigDecimal.ZERO) < 0) {
       resultColor = "color:blue;";
@@ -119,6 +123,8 @@ public class MailService {
         .append("'>")
         .append(" Result : ")
         .append(StringUtil.parseUsdAmount(netProfit.toString()))
+        .append(" ")
+        .append(formattedPercentage)
         .append("</h3>");
 
     htmlContent.append("</body></html>");

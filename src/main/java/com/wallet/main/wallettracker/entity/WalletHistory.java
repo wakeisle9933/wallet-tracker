@@ -46,7 +46,7 @@ public class WalletHistory {
 
   private BigDecimal total_balance;
 
-  private BigDecimal average_price;
+  private String average_price;
 
   private String contract_address;
 

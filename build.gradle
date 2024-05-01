@@ -37,6 +37,7 @@ dependencies {
     implementation 'org.hibernate.orm:hibernate-community-dialects:6.5.0.Final'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.json:json:20230227'
 }
 
 tasks.named('test') {

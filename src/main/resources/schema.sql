@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS wallet_history (
       price TEXT,
       usd_value TEXT,
       total_balance REAL,
-      average_price REAL,
+      average_price TEXT,
       contract_address TEXT,
       created_date TEXT
 );

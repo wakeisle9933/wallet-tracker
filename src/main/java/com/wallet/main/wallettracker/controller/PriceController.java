@@ -16,9 +16,9 @@ public class PriceController {
   private final PriceService priceService;
 
   @GetMapping("/get-price-by-contract")
-  public ResponseEntity<String> getDextoolsPriceByContract(@RequestParam String contract)
+  public ResponseEntity<String> getDextoolsPriceByContract(@RequestParam String address)
       throws MessagingException, IOException {
-    String dextoolsPriceByContract = priceService.getPriceByContract(contract);
+    String dextoolsPriceByContract = priceService.getPriceByTokenAddress(address);
     return ResponseEntity.ok(dextoolsPriceByContract);
   }
 

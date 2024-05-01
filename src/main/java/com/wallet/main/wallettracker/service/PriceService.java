@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,26 +31,69 @@ import org.springframework.stereotype.Service;
 public class PriceService {
 
   @Value("${moralis.api}")
-  private String api;
+  private String moralisApi;
+
+  @Value("${dextools.api}")
+  private String dextoolsApi;
 
   // API 변경 대비
-  public String getPriceByContract(String contract) {
-    return getMoralisPriceByContract(contract);
+  public String getPriceByTokenAddress(String address) {
+    return getDextoolsPriceByContract(address);
   }
 
-  public String getMoralisPriceByContract(String contract) {
+  public String getDextoolsPriceByContract(String address) {
     // Base ETH를 WETH와 동일하게 처리
-    if (contract.equals(StringConstants.BASE_ETH_ADDRESS)) {
-      contract = "0x4200000000000000000000000000000000000006";
+    if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
+      address = "0x4200000000000000000000000000000000000006";
+    }
+
+    HttpClient client = HttpClient.newHttpClient();
+    String url = String.format("https://public-api.dextools.io/trial/v2/token/%s/%s/price", "base",
+        address);
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .header("accept", "application/json")
+        .header("X-API-KEY", dextoolsApi) // API 키를 헤더에 추가
+        .build();
+
+    try {
+      // API 스펙 상 1초 대기
+      Thread.sleep(1500);
+
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() == 200) {
+        JSONObject jsonResponse = new JSONObject(response.body());
+
+        if (jsonResponse.has("data")) {
+          JSONObject dataObject = jsonResponse.getJSONObject("data");
+
+          if (dataObject.has("price")) {
+            return dataObject.getBigDecimal("price").toPlainString();
+          }
+        }
+      }
+
+      return "-";
+    } catch (Exception e) {
+      log.error("Error occurred while sending request: " + e.getMessage());
+      return "-"; // 예외가 발생하면 "-" 반환
+    }
+  }
+
+  public String getMoralisPriceByContract(String address) {
+    // Base ETH를 WETH와 동일하게 처리
+    if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
+      address = "0x4200000000000000000000000000000000000006";
     }
 
     HttpClient client = HttpClient.newHttpClient();
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(
-            "https://deep-index.moralis.io/api/v2.2/erc20/" + contract
+            "https://deep-index.moralis.io/api/v2.2/erc20/" + address
                 + "/price?chain=0x2105&include=percent_change"))
         .header("Content-Type", "application/json")
-        .header("X-API-Key", api)
+        .header("X-API-Key", moralisApi)
         .build();
     try {
       HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
@@ -81,7 +125,7 @@ public class PriceService {
 
         modelList.add(
             WalletModel.builder().name(model.getName())
-                .amount(getPriceByContract(model.getContractAddress()))
+                .amount(getPriceByTokenAddress(model.getContractAddress()))
                 .contractAddress(model.getContractAddress())
                 .build());
 

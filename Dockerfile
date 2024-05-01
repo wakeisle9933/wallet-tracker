@@ -32,5 +32,8 @@ RUN apt-get update && apt-get install -y wget gnupg2 && \
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
     apt-get update && apt-get install -y google-chrome-stable
 
-# 11. 애플리케이션 실행
+# 11. SQLite3 설치
+RUN apt-get install -y sqlite3
+
+# 12. 애플리케이션 실행
 ENTRYPOINT ["java","-jar","/app/app.jar"]
