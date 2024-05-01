@@ -305,10 +305,18 @@ public class WalletService {
             alignStyle = "right";
           }
 
-          if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY ||
-              baseCompareModel.getStatus() == StatusConstants.SOLD_ALL) {
-            htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>")
-                .append("<td style='text-align: right; font-weight:bold;").append(textColor)
+          if (baseCompareModel.getStatus().equals(StatusConstants.NEW_ENTRY) ||
+              baseCompareModel.getStatus().equals(StatusConstants.SOLD_ALL)) {
+
+            if (baseCompareModel.getStatus().equals(StatusConstants.NEW_ENTRY)) {
+              htmlContent.append("<td style='text-align: center;'>").append("-").append("</td>");
+            } else {
+              htmlContent.append("<td style='text-align: right;'>").append(
+                      StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getPreviousQuantity()))
+                  .append("</td>");
+            }
+
+            htmlContent.append("<td style='text-align: right; font-weight:bold;").append(textColor)
                 .append("'>")
                 .append(
                     StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getProceedQuantity()))
@@ -490,6 +498,7 @@ public class WalletService {
             .get(internalBaseModel.getContractAddress().indexOf(contract));
         compareModelList.add(BaseCompareModel.builder().name(name)
             .status(StatusConstants.SOLD_ALL)
+            .previousQuantity(BigDecimalUtil.format(internalMap.get(contract)))
             .proceedQuantity(BigDecimalUtil.format(internalMap.get(contract)))
             .contractAddress(contract).build());
       }
