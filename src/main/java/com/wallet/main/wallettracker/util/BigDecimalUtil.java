@@ -18,6 +18,7 @@ public class BigDecimalUtil {
           return BigDecimal.ZERO;
         }
         s = s.replace(",", "");
+        s = s.replace("$", "");
         return new BigDecimal(s);
       } catch (Exception e) {
         return BigDecimal.ZERO;
