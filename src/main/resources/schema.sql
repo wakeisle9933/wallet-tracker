@@ -1,4 +1,6 @@
 --DROP TABLE wallet_history;
+--DROP TABLE whitelist_token;
+--DROP TABLE blacklist_token;
 CREATE TABLE IF NOT EXISTS wallet_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       address TEXT NOT NULL,
@@ -13,4 +15,23 @@ CREATE TABLE IF NOT EXISTS wallet_history (
       average_price TEXT,
       contract_address TEXT,
       created_date TEXT
+);
+
+CREATE TABLE IF NOT EXISTS whitelist_token
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chain TEXT NOT NULL,
+    name TEXT NOT NULL,
+    contract_address TEXT NOT NULL,
+    created_date TEXT
+);
+
+--DROP TABLE blacklist_token;
+CREATE TABLE IF NOT EXISTS blacklist_token
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chain TEXT NOT NULL,
+    name TEXT NOT NULL,
+    contract_address TEXT NOT NULL,
+    created_date TEXT
 );
