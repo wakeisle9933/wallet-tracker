@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,6 +246,12 @@ public class WalletService {
       }
 
       if (!baseCompareModelList.isEmpty()) {
+        Collections.sort(baseCompareModelList, (o1, o2) -> {
+          BigDecimal usdValue1 = BigDecimalUtil.formatStringToBigDecimal(o1.getUsdValue());
+          BigDecimal usdValue2 = BigDecimalUtil.formatStringToBigDecimal(o2.getUsdValue());
+          return usdValue2.compareTo(usdValue1);
+        });
+
         baseResultModelList.add(
             BaseResultModel.builder().nickname(addressNickname[1])
                 .contractAddress(addressNickname[0])
