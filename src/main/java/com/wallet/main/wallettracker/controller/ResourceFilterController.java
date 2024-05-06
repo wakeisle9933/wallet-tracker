@@ -33,7 +33,7 @@ public class ResourceFilterController {
 
   @PostMapping("/add-filter")
   public ResponseEntity<String> requestAddFilterToFile(@RequestBody FilterDto filterDto) {
-    boolean isAdded = resourceFilterService.addFilterToFile(filterDto.getKeyword());
+    boolean isAdded = resourceFilterService.addFilterKeywordToFile(filterDto.getKeyword());
 
     if (isAdded) {
       return ResponseEntity.ok("Filter keyword added successfully.");

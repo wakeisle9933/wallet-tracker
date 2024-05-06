@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +44,7 @@ public class ResourceFilterService {
     return filterKeywordList;
   }
 
-  public boolean addFilterToFile(String keyword) {
+  public boolean addFilterKeywordToFile(String keyword) {
     File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
 
     try {
@@ -85,6 +86,46 @@ public class ResourceFilterService {
       return false;
     }
   }
+
+  public boolean addFilterKeywordsToFile(List<String> keywords) {
+    File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);
+
+    try {
+      // 파일이 존재하지 않으면 생성
+      if (!file.exists()) {
+        file.createNewFile();
+      }
+
+      // 기존 파일에서 키워드 목록 읽어오기
+      List<String> existingKeywords = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+
+      // FileWriter를 append mode로 설정
+      FileWriter fw = new FileWriter(file, true);
+      BufferedWriter bw = new BufferedWriter(fw);
+      PrintWriter out = new PrintWriter(bw);
+
+      for (String keyword : keywords) {
+        // 중복 키워드 확인
+        if (!existingKeywords.contains(keyword)) {
+          if (file.length() != 0) {
+            // 파일이 비어있지 않다면, 새 줄에 키워드 추가
+            out.println();
+          }
+          out.print(keyword);
+        }
+      }
+
+      out.close();
+      bw.close();
+      fw.close();
+
+      return true;
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
 
   public boolean removeKeywordFromFile(String keyword) {
     File file = new File(FilePathConstants.FILTER_KEYWORD_PATH);

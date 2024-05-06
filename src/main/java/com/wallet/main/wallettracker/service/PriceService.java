@@ -58,14 +58,14 @@ public class PriceService {
 
     try {
       // API 스펙 상 1초 대기
-      Thread.sleep(1500);
+      Thread.sleep(1250);
 
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() == 200) {
         JSONObject jsonResponse = new JSONObject(response.body());
 
-        if (jsonResponse.has("data")) {
+        if (jsonResponse.has("data") && !jsonResponse.isNull("data")) {
           JSONObject dataObject = jsonResponse.getJSONObject("data");
 
           if (dataObject.has("price")) {

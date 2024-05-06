@@ -1,6 +1,8 @@
 package com.wallet.main.wallettracker.service;
 
+import com.wallet.main.wallettracker.entity.BlacklistToken;
 import com.wallet.main.wallettracker.entity.WalletHistory;
+import com.wallet.main.wallettracker.entity.WhitelistToken;
 import com.wallet.main.wallettracker.model.BaseCompareModel;
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.model.BaseResultModel;
@@ -22,10 +24,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +40,9 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -42,6 +52,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class WalletService {
 
+  @Value("${dextools.api}")
+  private String dextoolsApi;
+
   private static final String EXCLUDE_FILE = "Nickname_base";
 
   private final JavaMailSender mailSender;
@@ -49,13 +62,14 @@ public class WalletService {
   private final PriceService priceService;
   private final WalletHistoryService walletHistoryService;
   private final MailService mailService;
+  private final WhitelistTokenService whitelistTokenService;
+  private final BlacklistTokenService blacklistTokenService;
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
     BufferedReader addressReader = new BufferedReader(new FileReader(file));
-
     List<String> baseAddresses = addressReader.lines().toList();
-    StringBuilder mainSb = new StringBuilder();
+
     List<BaseResultModel> baseResultModelList = new ArrayList<>();
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
@@ -63,23 +77,184 @@ public class WalletService {
       // 조회한 내역 가져오기
       BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
 
-      // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
+      List<String> name = new ArrayList<>();
+      List<String> quantity = new ArrayList<>();
+      List<String> contractAddress = new ArrayList<>();
+      for (int i = 0; i < externalCompareBase.getContractAddress().size(); i++) {
+
+        if (externalCompareBase.getContractAddress().get(i)
+            .equals(StringConstants.BASE_ETH_ADDRESS)) {
+          name.add(externalCompareBase.getName().get(i));
+          quantity.add(externalCompareBase.getQuantity().get(i));
+          contractAddress.add(externalCompareBase.getContractAddress().get(i));
+          continue;
+        }
+
+        // 화이트리스트의 경우 검증없이 추가, 블랙리스트의 경우 패스
+        if (whitelistTokenService.existByContractAddress(
+            externalCompareBase.getContractAddress().get(i))) {
+          name.add(externalCompareBase.getName().get(i));
+          quantity.add(externalCompareBase.getQuantity().get(i));
+          contractAddress.add(externalCompareBase.getContractAddress().get(i));
+          continue;
+        } else if (blacklistTokenService.existByContractAddress(
+            externalCompareBase.getContractAddress().get(i))) {
+          continue;
+        }
+
+        try {
+
+          // 1초당 최대 1번 호출 가능
+          Thread.sleep(1250);
+
+          LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+          LocalDateTime twoYearsAgo = now.minusYears(2);
+          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+          String queryParams =
+              "?sort=creationTime&order=asc&from=" + twoYearsAgo.format(formatter) +
+                  "&to=" + now.format(formatter);
+
+          HttpClient client = HttpClient.newHttpClient();
+
+          HttpRequest request = HttpRequest.newBuilder()
+              .uri(new URI(
+                  "https://public-api.dextools.io/trial/v2/token/base/"
+                      + externalCompareBase.getContractAddress().get(i)
+                      + "/pools" + queryParams))
+              .header("accept", "application/json")
+              .header("X-API-Key", dextoolsApi)
+              .GET()
+              .build();
+
+          HttpResponse<String> response = client.send(request,
+              HttpResponse.BodyHandlers.ofString());
+
+          JSONObject jsonObj = new JSONObject(response.body());
+          int statusCode = jsonObj.optInt("statusCode", 0);
+
+          if (statusCode == 200) {
+            JSONObject data = jsonObj.getJSONObject("data");
+            JSONArray results = data.getJSONArray("results");
+
+            // Pair 20개 넘을 경우 Whitelist 처리
+            if (data.getInt("totalPages") > 1) {
+              whitelistTokenService.save(WhitelistToken.builder().chain("base")
+                  .name(externalCompareBase.getName().get(i))
+                  .contract_address(externalCompareBase.getContractAddress().get(i))
+                  .created_date(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+                      .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build());
+              continue;
+            }
+
+            boolean trustablePair = false;
+            for (int j = 0; j < results.length(); j++) {
+              JSONObject result = results.getJSONObject(j);
+              String exchangeName = result.getJSONObject("exchange").getString("name");
+              String sideTokenAddress = result.getJSONObject("sideToken").getString("address");
+
+              // UNISWAP, SUSHISWAP 대상 WETH만
+              if ((exchangeName.equals("Uniswap V2") || exchangeName.equals("Uniswap V3")
+                  || exchangeName.equals("Sushiswap V2") || exchangeName.equals("Sushiswap V3")) &&
+                  sideTokenAddress.equals("0x4200000000000000000000000000000000000006")) {
+                String exchangeAddress = result.getString("address");
+
+                // 1초당 최대 1번 호출 가능
+                Thread.sleep(1250);
+
+                HttpClient liquidityClient = HttpClient.newHttpClient();
+
+                HttpRequest liquidityRequest = HttpRequest.newBuilder()
+                    .uri(new URI(
+                        "https://public-api.dextools.io/trial/v2/pool/base/" + exchangeAddress
+                            + "/liquidity"))
+                    .header("accept", "application/json")
+                    .header("X-API-Key", dextoolsApi)
+                    .GET()
+                    .build();
+
+                HttpResponse<String> liquidityResponse = liquidityClient.send(liquidityRequest,
+                    HttpResponse.BodyHandlers.ofString());
+
+                if (liquidityResponse.statusCode() == 200) {
+                  JSONObject jsonResponse = new JSONObject(liquidityResponse.body());
+
+                  // 데이터에서 liquidity 값을 추출
+                  BigDecimal liquidity = jsonResponse.getJSONObject("data")
+                      .optBigDecimal("liquidity", BigDecimal.ZERO);
+
+                  if (liquidity.compareTo(BigDecimal.valueOf(1000)) >= 0) {
+                    trustablePair = true;
+                    break;
+                  }
+
+                } else {
+                  log.error(
+                      "HTTP request failed with status code: " + liquidityResponse.statusCode());
+                }
+              }
+            }
+
+            if (trustablePair) {
+              name.add(externalCompareBase.getName().get(i));
+              quantity.add(externalCompareBase.getQuantity().get(i));
+              contractAddress.add(externalCompareBase.getContractAddress().get(i));
+              whitelistTokenService.save(WhitelistToken.builder().chain("base")
+                  .name(externalCompareBase.getName().get(i))
+                  .contract_address(externalCompareBase.getContractAddress().get(i))
+                  .created_date(LocalDateTime.now()
+                      .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build());
+            } else {
+              blacklistTokenService.save(BlacklistToken.builder().chain("base")
+                  .name(externalCompareBase.getName().get(i))
+                  .contract_address(externalCompareBase.getContractAddress().get(i))
+                  .created_date(LocalDateTime.now()
+                      .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build());
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+      // 조회한 내용 없을 경우 continue 처리
       if (externalCompareBase == null) {
         continue;
       }
 
       List<BaseCompareModel> baseCompareModelList = new ArrayList<>();
+      // Blacklist 제외해 재구성
+      externalCompareBase.setName(name);
+      externalCompareBase.setQuantity(quantity);
+      externalCompareBase.setContractAddress(contractAddress);
       for (int i = 0; i < externalCompareBase.getContractAddress().size(); i++) {
-        baseCompareModelList.add(
-            BaseCompareModel.builder().name(externalCompareBase.getName().get(i))
-                .totalQuantity(externalCompareBase.getQuantity().get(i))
-                .contractAddress(externalCompareBase.getContractAddress().get(i))
-                .build());
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(
+            externalCompareBase.getContractAddress().get(i));
+        String totalUsdAmount = StringUtil.getTotalUsdAmount(
+            externalCompareBase.getQuantity().get(i), priceByTokenAddress);
+
+        // 10$ 이하의 경우 포함하지 않음
+        BigDecimal minimumLimit = new BigDecimal("10");
+        if (BigDecimalUtil.formatStringToBigDecimal(totalUsdAmount).compareTo(minimumLimit) >= 0) {
+          baseCompareModelList.add(
+              BaseCompareModel.builder().name(externalCompareBase.getName().get(i))
+                  .totalQuantity(externalCompareBase.getQuantity().get(i))
+                  .contractAddress(externalCompareBase.getContractAddress().get(i))
+                  .usdValue(totalUsdAmount)
+                  .build());
+        }
       }
 
-      baseResultModelList.add(
-          BaseResultModel.builder().nickname(addressNickname[1]).contractAddress(addressNickname[0])
-              .baseCompareModelList(baseCompareModelList).build());
+      if (!baseCompareModelList.isEmpty()) {
+        baseResultModelList.add(
+            BaseResultModel.builder().nickname(addressNickname[1])
+                .contractAddress(addressNickname[0])
+                .baseCompareModelList(baseCompareModelList).build());
+      }
+    }
+
+    if (baseResultModelList.isEmpty()) {
+      log.info("No valid data. Email Will Not Send");
+      return;
     }
 
     sendDailyCheckEmail(baseResultModelList);
@@ -110,13 +285,16 @@ public class WalletService {
             .append("</h3>");
         htmlContent.append("<table border='1' cellpadding='5'>");
         htmlContent.append(
-            "<tr><th>Currency</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th></tr>");
+            "<tr><th>Currency</th><th>Total Balance</th><th>USD Value</th><th>Contract Address(Move to Dextools)</th></tr>");
 
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
           htmlContent.append("<tr>");
           htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
           htmlContent.append("<td style='text-align: right;'>")
               .append(baseCompareModel.getTotalQuantity())
+              .append("</td>");
+          htmlContent.append("<td style='text-align: right; font-weight:bold;'>")
+              .append(baseCompareModel.getUsdValue())
               .append("</td>");
           String dexToolsUrl =
               "https://www.dextools.io/app/en/base/pair-explorer/"
@@ -282,7 +460,7 @@ public class WalletService {
                   .total_balance(
                       BigDecimalUtil.formatStringToBigDecimal(totalBalance))
                   .contract_address(baseCompareModel.getContractAddress())
-                  .created_date(LocalDateTime.now()
+                  .created_date(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
                       .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                   .build());
 
