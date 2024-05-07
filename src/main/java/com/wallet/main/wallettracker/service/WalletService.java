@@ -268,10 +268,6 @@ public class WalletService {
 
   public void sendDailyCheckEmail(List<BaseResultModel> baseResultModelList)
       throws IOException, MessagingException {
-    File file = new File(FilePathConstants.EMAIL_PATH);
-    BufferedReader emailReader = new BufferedReader(new FileReader(file));
-    List<String> emailAddresses = emailReader.lines().toList();
-
     // HTML 템플릿 생성
     StringBuilder htmlContent = new StringBuilder();
     htmlContent.append("<html><body>");
@@ -394,10 +390,6 @@ public class WalletService {
 
   public void sendTxNotificationEmail(List<BaseResultModel> baseResultModelList)
       throws IOException, MessagingException {
-    File file = new File(FilePathConstants.EMAIL_PATH);
-    BufferedReader emailReader = new BufferedReader(new FileReader(file));
-    List<String> emailAddresses = emailReader.lines().toList();
-
     // HTML 템플릿 생성
     StringBuilder htmlContent = new StringBuilder();
     htmlContent.append("<html><body>");
@@ -418,7 +410,11 @@ public class WalletService {
         htmlContent.append(
             "<tr><th>Currency</th><th>Status</th><th>Previous Balance</th><th>Trade Volume</th><th>Estimate Price</th><th>USD Value</th><th>Total Balance</th><th>Contract Address(Move to Dextools)</th><th>Scam Check</th></tr>");
 
+        boolean existBaseEth = false;
         for (BaseCompareModel baseCompareModel : baseResultModel.getBaseCompareModelList()) {
+          if (baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
+            existBaseEth = true;
+          }
           String textColor;
           if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY
               || baseCompareModel.getStatus() == StatusConstants.BOUGHT) {
@@ -578,6 +574,12 @@ public class WalletService {
           }
           htmlContent.append("</tr>");
         }
+
+        if (!existBaseEth) {
+          htmlContent.append(
+              "<tr><td colspan='9' style='text-align: center; font-weight:bold;'>\uD83D\uDEA8 <u>Warning: without change Ethereum balance may indicate a transfer, an airdrop, or a scam. Be cautious.</u> \uD83D\uDEA8</td></tr>");
+        }
+
         htmlContent.append("</table><br>");
       }
     }
