@@ -15,7 +15,6 @@ import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
 import com.wallet.main.wallettracker.util.WalletLineParseUtil;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,7 +44,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -317,14 +315,9 @@ public class WalletService {
 
     htmlContent.append("</body></html>");
 
-    for (String email : emailAddresses) {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-      helper.setTo(email);
-      helper.setSubject("Daily Wallet Balance Checker");
-      helper.setText(htmlContent.toString(), true); // HTML 내용 설정
-      mailSender.send(message);
-    }
+    mailService.sendMail(
+        MailModel.builder().subject("Daily Wallet Balance Checker")
+            .htmlContent(htmlContent.toString()).build());
   }
 
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
@@ -591,14 +584,9 @@ public class WalletService {
 
     htmlContent.append("</body></html>");
 
-    for (String email : emailAddresses) {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-      helper.setTo(email);
-      helper.setSubject("10Minute Wallet Checker");
-      helper.setText(htmlContent.toString(), true); // HTML 내용 설정
-      mailSender.send(message);
-    }
+    mailService.sendMail(
+        MailModel.builder().subject("10Minute Wallet Checker")
+            .htmlContent(htmlContent.toString()).build());
   }
 
   private static boolean isNew(File nicknameFile, BaseModel externalCompareBase, boolean remake)

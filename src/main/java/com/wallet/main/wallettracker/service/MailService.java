@@ -136,14 +136,17 @@ public class MailService {
     BufferedReader emailReader = new BufferedReader(new FileReader(file));
     List<String> emailAddresses = emailReader.lines().toList();
 
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+    helper.setSubject(model.getSubject());
+    helper.setText(model.getHtmlContent(), true); // HTML 내용 설정
+
+    // 모든 이메일 주소를 BCC에 추가
     for (String email : emailAddresses) {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-      helper.setTo(email);
-      helper.setSubject(model.getSubject());
-      helper.setText(model.getHtmlContent(), true); // HTML 내용 설정
-      mailSender.send(message);
+      helper.addBcc(email);
     }
+
+    mailSender.send(message);
   }
 
 }
