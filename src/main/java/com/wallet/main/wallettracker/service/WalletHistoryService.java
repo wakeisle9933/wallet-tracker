@@ -8,10 +8,14 @@ import com.wallet.main.wallettracker.util.StatusConstants;
 import com.wallet.main.wallettracker.util.StringConstants;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,26 @@ public class WalletHistoryService {
     return repository.findAll();
   }
 
+  public List<WalletHistory> findByDateRange(String fromDate, String toDate) {
+    if (fromDate == null || toDate == null) {
+      return repository.findAll();
+    }
+
+    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    LocalDate startLocalDate = LocalDate.parse(fromDate, inputFormatter);
+    LocalDate endLocalDate = LocalDate.parse(toDate, inputFormatter);
+
+    LocalDateTime fromDateTime = startLocalDate.atStartOfDay();  // 00:00:00
+    LocalDateTime toDateTime = endLocalDate.atTime(23, 59, 59);  // 23:59:59
+
+    String formattedFromDateTime = fromDateTime.format(outputFormatter);
+    String formattedToDateTime = toDateTime.format(outputFormatter);
+
+    return repository.findByCreatedDateBetween(formattedFromDateTime, formattedToDateTime);
+  }
+
   public List<WalletHistory> findByAddressAndContractAddress(String address,
       String contractAddress) {
     return repository.findByAddressAndContractAddress(address, contractAddress);
@@ -30,6 +54,12 @@ public class WalletHistoryService {
 
   public void save(WalletHistory walletHistory) {
     repository.save(walletHistory);
+  }
+
+  @Transactional
+  public int saveAllWalletHistories(List<WalletHistory> walletHistories) {
+    List<WalletHistory> savedList = repository.saveAll(walletHistories);
+    return savedList.size();
   }
 
   public String calculateAveragePrice(String address,

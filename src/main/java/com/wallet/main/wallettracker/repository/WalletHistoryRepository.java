@@ -29,5 +29,9 @@ public interface WalletHistoryRepository extends JpaRepository<WalletHistory, Lo
   WalletHistory findTop1ByAddressAndContractAddressOrderByIdDesc(@Param("address") String address,
       @Param("contract_address") String contractAddress);
 
+  @Query("SELECT wh FROM WalletHistory wh WHERE wh.created_date BETWEEN :fromDateTime AND :toDateTime ORDER BY wh.id DESC")
+  List<WalletHistory> findByCreatedDateBetween(String fromDateTime,
+      String toDateTime);
+
 }
 

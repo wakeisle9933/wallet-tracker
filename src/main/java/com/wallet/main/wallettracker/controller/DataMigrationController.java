@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,9 +27,12 @@ public class DataMigrationController {
   private final BlacklistTokenService blacklistTokenService;
 
   @GetMapping("/export/walletHistory")
-  public ResponseEntity<?> exportWalletHistories() {
+  public ResponseEntity<?> exportWalletHistories(
+      @RequestParam(required = false) String fromDate,
+      @RequestParam(required = false) String toDate) {
     try {
-      return ResponseEntity.ok(walletHistoryService.findAll());
+      List<WalletHistory> walletHistories = walletHistoryService.findByDateRange(fromDate, toDate);
+      return ResponseEntity.ok(walletHistories);
     } catch (Exception e) {
       log.error("Failed to export wallet history", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
