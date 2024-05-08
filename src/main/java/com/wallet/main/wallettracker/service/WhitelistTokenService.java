@@ -5,6 +5,7 @@ import com.wallet.main.wallettracker.repository.WhitelistTokenRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,12 @@ public class WhitelistTokenService {
 
   public void save(WhitelistToken whitelistToken) {
     repository.save(whitelistToken);
+  }
+
+  @Transactional
+  public int saveAllBlacklistTokens(List<WhitelistToken> whitelistTokens) {
+    List<WhitelistToken> savedList = repository.saveAll(whitelistTokens);
+    return savedList.size();
   }
 
   public int deleteByContractAddress(String contractAddress) {

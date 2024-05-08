@@ -18,6 +18,7 @@ import jakarta.mail.MessagingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -43,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,13 +56,18 @@ public class WalletService {
 
   private static final String EXCLUDE_FILE = "Nickname_base";
 
-  private final JavaMailSender mailSender;
   private final SeleniumService seleniumService;
+  private final MoralisService moralisService;
   private final PriceService priceService;
   private final WalletHistoryService walletHistoryService;
   private final MailService mailService;
   private final WhitelistTokenService whitelistTokenService;
   private final BlacklistTokenService blacklistTokenService;
+
+  public BaseModel getWalletTokens(String[] addressNickname) throws FileNotFoundException {
+    // return seleniumService.seleniumBaseByI2Scan(addressNickname);
+    return moralisService.getWalletTokenInfo(addressNickname);
+  }
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
@@ -74,8 +79,7 @@ public class WalletService {
       String[] addressNickname = address.split(" ");
 
       // 조회한 내역 가져오기
-      BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
-
+      BaseModel externalCompareBase = getWalletTokens(addressNickname);
       List<String> name = new ArrayList<>();
       List<String> quantity = new ArrayList<>();
       List<String> contractAddress = new ArrayList<>();
@@ -292,7 +296,7 @@ public class WalletService {
           htmlContent.append("<tr>");
           htmlContent.append("<td>").append(baseCompareModel.getName()).append("</td>");
           htmlContent.append("<td style='text-align: right;'>")
-              .append(baseCompareModel.getTotalQuantity())
+              .append(StringUtil.formatNumberWithKoreanDesc(baseCompareModel.getTotalQuantity()))
               .append("</td>");
           htmlContent.append("<td style='text-align: right; font-weight:bold;'>")
               .append(baseCompareModel.getUsdValue())
@@ -329,7 +333,7 @@ public class WalletService {
       // nickname에 해당하는 파일 경로 생성
       String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
       // 조회한 내역 가져오기
-      BaseModel externalCompareBase = seleniumService.seleniumBaseByI2Scan(addressNickname);
+      BaseModel externalCompareBase = getWalletTokens(addressNickname);
       // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
       if (externalCompareBase == null) {
         log.info("No results in Selenium, Email Will Not Send");
