@@ -2,6 +2,7 @@ package com.wallet.main.wallettracker.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
@@ -141,5 +142,17 @@ public class StringUtil {
     return result.toString();
   }
 
+  public static String convertWeiToEther(String weiBalance) {
+    BigDecimal wei = new BigDecimal(weiBalance);
+    BigDecimal ether = wei.divide(BigDecimal.TEN.pow(18), 18, RoundingMode.FLOOR);
+    return ether.toString();
+  }
+
+  public static String convertBalanceToString(String balance, int decimals) {
+    BigDecimal wei = new BigDecimal(balance);
+    BigDecimal divisor = BigDecimal.TEN.pow(decimals);
+    BigDecimal convertedBalance = wei.divide(divisor, decimals, RoundingMode.FLOOR);
+    return convertedBalance.toString();
+  }
 
 }
