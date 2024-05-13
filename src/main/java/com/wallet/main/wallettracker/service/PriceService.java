@@ -42,6 +42,10 @@ public class PriceService {
   }
 
   public String getDextoolsPriceByContract(String address) {
+    return getDextoolsPriceByContractWithRetry(address, 0);
+  }
+
+  public String getDextoolsPriceByContractWithRetry(String address, int retryCount) {
     // Base ETH를 WETH와 동일하게 처리
     if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
       address = "0x4200000000000000000000000000000000000006";
@@ -72,6 +76,11 @@ public class PriceService {
             return dataObject.getBigDecimal("price").toPlainString();
           }
         }
+      }
+
+      if (retryCount < 2) {
+        Thread.sleep(1000);
+        return getDextoolsPriceByContractWithRetry(address, retryCount + 1);
       }
 
       return "-";
