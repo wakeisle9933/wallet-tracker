@@ -1,9 +1,11 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
+import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
 import java.io.FileNotFoundException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class MoralisService {
   private String moralisApi;
 
   private final WebClient webClient;
+  private final PriceService priceService;
 
   public BaseModel getWalletTokenInfo(String[] addressNickname) throws FileNotFoundException {
     try {
@@ -69,6 +72,14 @@ public class MoralisService {
         String balance = StringUtil.convertBalanceToString(jsonObject.getString("balance"),
             jsonObject.getInt("decimals"));
         String tokenAddress = jsonObject.getString("token_address");
+
+        BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+            StringUtil.getTotalUsdAmount(balance,
+                priceService.getPriceByTokenAddress(tokenAddress)));
+
+        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+          continue;
+        }
 
         nameList.add(name);
         quantityList.add(balance);

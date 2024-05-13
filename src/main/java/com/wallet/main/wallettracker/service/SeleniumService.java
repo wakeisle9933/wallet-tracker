@@ -1,9 +1,12 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
+import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
+import com.wallet.main.wallettracker.util.StringUtil;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +32,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class SeleniumService {
+
+  private final PriceService priceService;
 
   public BaseModel seleniumBaseByI2Scan(String[] addressNickname) {
     int maxRetries = 3; // 최대 재시도 횟수
@@ -85,14 +90,25 @@ public class SeleniumService {
               .getText();
           try {
             if (!FilterKeywordUtil.containsFilterKeyword(name)) {
-              nameList.add(name);
-              quantityList.add(tokenElement.findElement(
+              String quantity = tokenElement.findElement(
                       By.cssSelector("div.text-muted-foreground.mt-\\[2px\\] > span.mr-4")).getText()
                   .split(" ")[0]
-                  .replaceAll("[^0-9.]", ""));
-              contractAddressList.add(tokenElement.findElement(
+                  .replaceAll("[^0-9.]", "");
+              String contractAddress = tokenElement.findElement(
                       By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
-                  .split("/token/")[1]);
+                  .split("/token/")[1];
+
+              BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+                  StringUtil.getTotalUsdAmount(quantity,
+                      priceService.getPriceByTokenAddress(contractAddress)));
+
+              if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+                continue;
+              }
+
+              nameList.add(name);
+              quantityList.add(quantity);
+              contractAddressList.add(contractAddress);
             }
           } catch (IOException e) {
             throw new RuntimeException(e);
