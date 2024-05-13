@@ -1,6 +1,7 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.entity.WalletHistory;
+import com.wallet.main.wallettracker.entity.WalletHistoryResult;
 import com.wallet.main.wallettracker.model.MailModel;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
@@ -13,6 +14,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 public class MailService {
 
   private final JavaMailSender mailSender;
+  private final WalletHistoryResultService walletHistoryResultService;
 
   public String createHTMLTransactionSummary(List<WalletHistory> walletHistoryList) {
     // HTML 템플릿 생성
@@ -109,9 +113,24 @@ public class MailService {
         .multiply(BigDecimal.valueOf(100));
     String formattedPercentage = String.format("(%.2f%%)", profitPercentage);
     String resultColor = "color:#32CD32;";
+    String profitOrLoss = "profit";
     if (netProfit.compareTo(BigDecimal.ZERO) < 0) {
       resultColor = "color:blue;";
+      profitOrLoss = "lose";
     }
+
+    walletHistoryResultService.save(
+        WalletHistoryResult.builder().address(walletHistoryList.getFirst().getAddress())
+            .nickname(walletHistoryList.getFirst().getNickname())
+            .currency(walletHistoryList.getFirst().getCurrency())
+            .contract_address(walletHistoryList.getFirst().getContract_address())
+            .profitOrLoss(profitOrLoss)
+            .total_investment(StringUtil.parseUsdAmount(totalInvestment.toString()))
+            .total_profit(StringUtil.parseUsdAmount(profit.toString()))
+            .result(StringUtil.parseUsdAmount(netProfit.toString()))
+            .created_date(
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+            .build());
 
     htmlContent.append("<h3 style='font-weight:bold; color:red;'>").append(" Total Investment : ")
         .append(StringUtil.parseUsdAmount(totalInvestment.toString()))

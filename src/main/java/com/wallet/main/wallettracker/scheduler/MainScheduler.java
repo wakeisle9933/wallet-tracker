@@ -17,7 +17,7 @@ public class MainScheduler {
   private final WalletService walletService;
   private final SchedulerConfig schedulerConfig;
 
-  @Scheduled(cron = "0 0 10 * * ?", zone = "Asia/Seoul")
+  @Scheduled(cron = "0 0 9 * * ?", zone = "Asia/Seoul")
   public void doPeriodicReporting() throws MessagingException, IOException {
     if (schedulerConfig.isSchedulerEnabled()) {
       walletService.sendPeriodicEmail();
