@@ -25,6 +25,9 @@ public class WalletHistory {
   private Long id;
 
   @Column(nullable = false)
+  private String chain;
+
+  @Column(nullable = false)
   private String address;
 
   @Column(nullable = false)

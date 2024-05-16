@@ -447,7 +447,9 @@ public class WalletService {
 
           //String averageUnitPrice = walletHistoryService.calculateAveragePrice(baseResultModel.getContractAddress(), baseCompareModel, price);
           walletHistoryService.save(
-              WalletHistory.builder().address(baseResultModel.getContractAddress())
+              WalletHistory.builder()
+                  .chain("base")
+                  .address(baseResultModel.getContractAddress())
                   .nickname(baseResultModel.getNickname()).status(baseCompareModel.getStatus())
                   .currency(baseCompareModel.getName())
                   .previous_balance(BigDecimalUtil.formatStringToBigDecimal(

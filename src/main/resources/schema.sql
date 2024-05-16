@@ -4,6 +4,7 @@
 --DROP TABLE blacklist_token;
 CREATE TABLE IF NOT EXISTS wallet_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chain TEXT NOT NULL,
       address TEXT NOT NULL,
       nickname TEXT NOT NULL,
       status TEXT NOT NULL,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS wallet_history (
 
 CREATE TABLE IF NOT EXISTS wallet_history_result (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chain TEXT NOT NULL,
       address TEXT NOT NULL,
       nickname TEXT NOT NULL,
       currency TEXT NOT NULL,
