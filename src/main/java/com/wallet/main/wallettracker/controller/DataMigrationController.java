@@ -2,8 +2,10 @@ package com.wallet.main.wallettracker.controller;
 
 import com.wallet.main.wallettracker.entity.BlacklistToken;
 import com.wallet.main.wallettracker.entity.WalletHistory;
+import com.wallet.main.wallettracker.entity.WalletHistoryResult;
 import com.wallet.main.wallettracker.entity.WhitelistToken;
 import com.wallet.main.wallettracker.service.BlacklistTokenService;
+import com.wallet.main.wallettracker.service.WalletHistoryResultService;
 import com.wallet.main.wallettracker.service.WalletHistoryService;
 import com.wallet.main.wallettracker.service.WhitelistTokenService;
 import java.util.List;
@@ -25,6 +27,7 @@ public class DataMigrationController {
   private final WalletHistoryService walletHistoryService;
   private final WhitelistTokenService whitelistTokenService;
   private final BlacklistTokenService blacklistTokenService;
+  private final WalletHistoryResultService walletHistoryResultService;
 
   @GetMapping("/export/walletHistory")
   public ResponseEntity<?> exportWalletHistories(
@@ -59,6 +62,17 @@ public class DataMigrationController {
       log.error("Failed to export blacklist token", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Failed to Export blacklist token");
+    }
+  }
+
+  @GetMapping("/export/walletHistoryResult")
+  public ResponseEntity<?> exportWalletHistoryResults() {
+    try {
+      return ResponseEntity.ok(walletHistoryResultService.findAll());
+    } catch (Exception e) {
+      log.error("Failed to export Wallet History Result", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to Export Wallet History Result");
     }
   }
 
@@ -100,5 +114,19 @@ public class DataMigrationController {
           .body("Failed to Import whitelist Tokens");
     }
   }
+
+  @PostMapping("/import/walletHistoryResult")
+  public ResponseEntity<?> importWalletHistoryResult(
+      @RequestBody List<WalletHistoryResult> whitelistTokens) {
+    try {
+      int savedSize = walletHistoryResultService.saveAllWalletHistoryResults(whitelistTokens);
+      return ResponseEntity.ok(savedSize + " Wallet History Result imported successfully");
+    } catch (Exception e) {
+      log.error("Failed to import wallet history result", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to Import wallet history result");
+    }
+  }
+
 
 }

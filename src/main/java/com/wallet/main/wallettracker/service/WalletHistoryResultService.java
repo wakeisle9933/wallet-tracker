@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,12 @@ public class WalletHistoryResultService {
 
   public void save(WalletHistoryResult walletHistoryResult) {
     repository.save(walletHistoryResult);
+  }
+
+  @Transactional
+  public int saveAllWalletHistoryResults(List<WalletHistoryResult> WalletHistoryResults) {
+    List<WalletHistoryResult> savedList = repository.saveAll(WalletHistoryResults);
+    return savedList.size();
   }
 
 
