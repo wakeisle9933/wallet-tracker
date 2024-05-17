@@ -152,7 +152,7 @@ public class StringUtil {
     BigDecimal wei = new BigDecimal(balance);
     BigDecimal divisor = BigDecimal.TEN.pow(decimals);
     BigDecimal convertedBalance = wei.divide(divisor, decimals, RoundingMode.FLOOR);
-    return convertedBalance.toString();
+    return convertedBalance.stripTrailingZeros().toPlainString();
   }
 
 }
