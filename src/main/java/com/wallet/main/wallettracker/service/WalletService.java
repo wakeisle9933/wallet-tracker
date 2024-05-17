@@ -336,7 +336,7 @@ public class WalletService {
       BaseModel externalCompareBase = getWalletTokens(addressNickname);
       // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
       if (externalCompareBase == null) {
-        log.info("No results in Selenium, Email Will Not Send");
+        log.info("No results, Email Will Not Send");
         continue;
       }
 
@@ -433,8 +433,7 @@ public class WalletService {
               .append("'>")
               .append(baseCompareModel.getStatus()).append("</td>");
 
-          String price = priceService.getPriceByTokenAddress(
-              baseCompareModel.getContractAddress());
+          String price = baseCompareModel.getPrice();
           String priceWithSubscript = StringUtil.formatPriceWithSubscript(price);
           String totalBalance;
           if (baseCompareModel.getStatus() == StatusConstants.NEW_ENTRY) {
@@ -619,7 +618,7 @@ public class WalletService {
     return isNew;
   }
 
-  private static BaseResultModel compareBase(BaseModel internalBaseModel,
+  private BaseResultModel compareBase(BaseModel internalBaseModel,
       BaseModel externalBaseModel) {
     List<BaseCompareModel> compareModelList = new ArrayList<>();
 
@@ -644,44 +643,86 @@ public class WalletService {
     for (String contract : externalMap.keySet()) {
       String name = externalBaseModel.getName()
           .get(externalBaseModel.getContractAddress().indexOf(contract));
+      boolean addStatus = true;
       if (internalMap.containsKey(contract)) {
         BigDecimal internalQuantity = internalMap.get(contract);
         BigDecimal externalQuantity = externalMap.get(contract);
 
         if (internalQuantity.compareTo(externalQuantity) > 0) {
           BigDecimal soldQuantity = internalQuantity.subtract(externalQuantity);
+          String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+          BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+              StringUtil.getTotalUsdAmount(soldQuantity.toString(), priceByTokenAddress));
+
+          if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+            addStatus = false;
+          }
+
           compareModelList.add(BaseCompareModel.builder().name(name)
               .status(StatusConstants.SOLD)
               .previousQuantity(BigDecimalUtil.format(internalQuantity))
               .proceedQuantity(BigDecimalUtil.format(soldQuantity))
               .totalQuantity(BigDecimalUtil.format(externalQuantity))
+              .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+              .price(priceByTokenAddress)
               .contractAddress(contract).build());
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
-          compareModelList.add(BaseCompareModel.builder().name(name)
-              .status(StatusConstants.BOUGHT)
-              .previousQuantity(BigDecimalUtil.format(internalQuantity))
-              .proceedQuantity(BigDecimalUtil.format(boughtQuantity))
-              .totalQuantity(BigDecimalUtil.format(externalQuantity))
-              .contractAddress(contract).build());
+          String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+          BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+              StringUtil.getTotalUsdAmount(boughtQuantity.toString(), priceByTokenAddress));
+
+          if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+            addStatus = false;
+          }
+
+          if (addStatus) {
+            compareModelList.add(BaseCompareModel.builder().name(name)
+                .status(StatusConstants.BOUGHT)
+                .previousQuantity(BigDecimalUtil.format(internalQuantity))
+                .proceedQuantity(BigDecimalUtil.format(boughtQuantity))
+                .totalQuantity(BigDecimalUtil.format(externalQuantity))
+                .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+                .price(priceByTokenAddress)
+                .contractAddress(contract).build());
+          }
         }
       } else {
-        compareModelList.add(BaseCompareModel.builder().name(name)
-            .status(StatusConstants.NEW_ENTRY)
-            .proceedQuantity(BigDecimalUtil.format(externalMap.get(contract)))
-            .contractAddress(contract).build());
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+        BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+            StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
+                priceByTokenAddress));
+
+        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+          addStatus = false;
+        }
+        if (addStatus) {
+          compareModelList.add(BaseCompareModel.builder().name(name)
+              .status(StatusConstants.NEW_ENTRY)
+              .proceedQuantity(BigDecimalUtil.format(externalMap.get(contract)))
+              .contractAddress(contract)
+              .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+              .price(priceByTokenAddress).build());
+        }
       }
     }
 
     for (String contract : internalMap.keySet()) {
       if (!externalMap.containsKey(contract)) {
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+        BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
+            StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
+                priceByTokenAddress));
+
         String name = internalBaseModel.getName()
             .get(internalBaseModel.getContractAddress().indexOf(contract));
         compareModelList.add(BaseCompareModel.builder().name(name)
             .status(StatusConstants.SOLD_ALL)
             .previousQuantity(BigDecimalUtil.format(internalMap.get(contract)))
             .proceedQuantity(BigDecimalUtil.format(internalMap.get(contract)))
-            .contractAddress(contract).build());
+            .contractAddress(contract)
+            .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+            .price(priceByTokenAddress).build());
       }
     }
 

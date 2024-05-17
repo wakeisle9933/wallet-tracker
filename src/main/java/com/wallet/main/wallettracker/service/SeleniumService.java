@@ -1,12 +1,9 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
-import com.wallet.main.wallettracker.util.BigDecimalUtil;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
-import com.wallet.main.wallettracker.util.StringUtil;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -97,15 +94,6 @@ public class SeleniumService {
               String contractAddress = tokenElement.findElement(
                       By.cssSelector("a.text-accent.sm\\:break-all")).getAttribute("href")
                   .split("/token/")[1];
-
-              BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
-                  StringUtil.getTotalUsdAmount(quantity,
-                      priceService.getPriceByTokenAddress(contractAddress)));
-
-              if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
-                continue;
-              }
-
               nameList.add(name);
               quantityList.add(quantity);
               contractAddressList.add(contractAddress);

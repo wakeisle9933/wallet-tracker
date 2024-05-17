@@ -1,11 +1,10 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.model.BaseModel;
-import com.wallet.main.wallettracker.util.BigDecimalUtil;
+import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
 import java.io.FileNotFoundException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -73,17 +72,11 @@ public class MoralisService {
             jsonObject.getInt("decimals"));
         String tokenAddress = jsonObject.getString("token_address");
 
-        BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
-            StringUtil.getTotalUsdAmount(balance,
-                priceService.getPriceByTokenAddress(tokenAddress)));
-
-        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
-          continue;
+        if (!FilterKeywordUtil.containsFilterKeyword(name)) {
+          nameList.add(name);
+          quantityList.add(balance);
+          contractAddressList.add(tokenAddress);
         }
-
-        nameList.add(name);
-        quantityList.add(balance);
-        contractAddressList.add(tokenAddress);
       }
       return BaseModel.builder()
           .nickname(addressNickname[1])

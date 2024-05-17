@@ -15,6 +15,7 @@ public class BaseCompareModel {
   String proceedQuantity;
   String totalQuantity;
   String contractAddress;
+  String price;
   String usdValue;
 
 }
