@@ -735,7 +735,7 @@ public class WalletService {
       if (!externalMap.containsKey(contract)) {
         String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
         BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
-            StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
+            StringUtil.getTotalUsdAmount(internalMap.get(contract).toString(),
                 priceByTokenAddress));
         String name = internalBaseModel.getName()
             .get(internalBaseModel.getContractAddress().indexOf(contract));
