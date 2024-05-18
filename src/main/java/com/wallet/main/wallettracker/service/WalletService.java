@@ -312,12 +312,20 @@ public class WalletService {
           htmlContent.append("<td style='text-align: right; font-weight:bold;'>")
               .append(baseCompareModel.getUsdValue())
               .append("</td>");
+
           String dexToolsUrl =
               "https://www.dextools.io/app/en/base/pair-explorer/"
                   + baseCompareModel.getContractAddress();
-          htmlContent.append("<td><a href=\"").append(dexToolsUrl)
-              .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
-              .append("</a></td>");
+
+          if (baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
+            dexToolsUrl = "-";
+            htmlContent.append("<td style=\"text-align: center;\">").append(dexToolsUrl)
+                .append("</td>");
+          } else {
+            htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+                .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
+                .append("</a></td>");
+          }
           htmlContent.append("</tr>");
         }
         htmlContent.append("</table><br>");
