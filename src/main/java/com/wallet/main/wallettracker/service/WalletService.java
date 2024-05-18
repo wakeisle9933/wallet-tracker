@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -73,8 +74,19 @@ public class WalletService {
     File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
     BufferedReader addressReader = new BufferedReader(new FileReader(file));
     List<String> baseAddresses = addressReader.lines().toList();
-
     List<BaseResultModel> baseResultModelList = new ArrayList<>();
+
+    List<WhitelistToken> whitelistTokens = whitelistTokenService.findAll();
+    List<BlacklistToken> blacklistTokens = blacklistTokenService.findAll();
+
+    List<String> whitelistTokenAddresses = whitelistTokens.stream()
+        .map(WhitelistToken::getContract_address)
+        .collect(Collectors.toList());
+
+    List<String> blacklistTokenAddresses = blacklistTokens.stream()
+        .map(BlacklistToken::getContract_address)
+        .collect(Collectors.toList());
+
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
 
@@ -94,13 +106,12 @@ public class WalletService {
         }
 
         // 화이트리스트의 경우 검증없이 추가, 블랙리스트의 경우 패스
-        if (whitelistTokenService.existByContractAddress(
-            externalCompareBase.getContractAddress().get(i))) {
+        if (whitelistTokenAddresses.contains(externalCompareBase.getContractAddress().get(i))) {
           name.add(externalCompareBase.getName().get(i));
           quantity.add(externalCompareBase.getQuantity().get(i));
           contractAddress.add(externalCompareBase.getContractAddress().get(i));
           continue;
-        } else if (blacklistTokenService.existByContractAddress(
+        } else if (blacklistTokenAddresses.contains(
             externalCompareBase.getContractAddress().get(i))) {
           continue;
         }
@@ -639,8 +650,19 @@ public class WalletService {
       }
     }
 
+    List<BlacklistToken> blacklistTokens = blacklistTokenService.findAll();
+    List<String> blacklistTokenAddresses = blacklistTokens.stream()
+        .map(BlacklistToken::getContract_address)
+        .collect(Collectors.toList());
+
     // 각 케이스에 대해 비교
     for (String contract : externalMap.keySet()) {
+
+      // 블랙리스트 미체크
+      if (blacklistTokenAddresses.contains(contract)) {
+        continue;
+      }
+
       String name = externalBaseModel.getName()
           .get(externalBaseModel.getContractAddress().indexOf(contract));
       boolean addStatus = true;
@@ -658,14 +680,16 @@ public class WalletService {
             addStatus = false;
           }
 
-          compareModelList.add(BaseCompareModel.builder().name(name)
-              .status(StatusConstants.SOLD)
-              .previousQuantity(BigDecimalUtil.format(internalQuantity))
-              .proceedQuantity(BigDecimalUtil.format(soldQuantity))
-              .totalQuantity(BigDecimalUtil.format(externalQuantity))
-              .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
-              .price(priceByTokenAddress)
-              .contractAddress(contract).build());
+          if (addStatus) {
+            compareModelList.add(BaseCompareModel.builder().name(name)
+                .status(StatusConstants.SOLD)
+                .previousQuantity(BigDecimalUtil.format(internalQuantity))
+                .proceedQuantity(BigDecimalUtil.format(soldQuantity))
+                .totalQuantity(BigDecimalUtil.format(externalQuantity))
+                .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+                .price(priceByTokenAddress)
+                .contractAddress(contract).build());
+          }
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
           String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
@@ -713,16 +737,23 @@ public class WalletService {
         BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
             StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
                 priceByTokenAddress));
-
         String name = internalBaseModel.getName()
             .get(internalBaseModel.getContractAddress().indexOf(contract));
-        compareModelList.add(BaseCompareModel.builder().name(name)
-            .status(StatusConstants.SOLD_ALL)
-            .previousQuantity(BigDecimalUtil.format(internalMap.get(contract)))
-            .proceedQuantity(BigDecimalUtil.format(internalMap.get(contract)))
-            .contractAddress(contract)
-            .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
-            .price(priceByTokenAddress).build());
+        boolean addStatus = true;
+
+        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+          addStatus = false;
+        }
+
+        if (addStatus) {
+          compareModelList.add(BaseCompareModel.builder().name(name)
+              .status(StatusConstants.SOLD_ALL)
+              .previousQuantity(BigDecimalUtil.format(internalMap.get(contract)))
+              .proceedQuantity(BigDecimalUtil.format(internalMap.get(contract)))
+              .contractAddress(contract)
+              .usdValue(StringUtil.parseUsdAmount(usdValue.toString()))
+              .price(priceByTokenAddress).build());
+        }
       }
     }
 
