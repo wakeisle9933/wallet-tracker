@@ -87,8 +87,20 @@ public class WalletService {
         .map(BlacklistToken::getContract_address)
         .collect(Collectors.toList());
 
+    int callCount = 0;
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
+
+      // Moralis 최대 호출 제한 방지용
+      if (callCount >= 13) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        callCount = 0;
+      }
+      callCount++;
 
       // 조회한 내역 가져오기
       BaseModel externalCompareBase = getWalletTokens(addressNickname);
@@ -345,6 +357,7 @@ public class WalletService {
     List<String> baseAddresses = addressReader.lines().toList();
     ArrayList<BaseResultModel> baseResultModelList = new ArrayList<>();
 
+    int callCount = 0;
     for (String address : baseAddresses) {
       String[] addressNickname = address.split(" ");
       String nickname = addressNickname[1];
@@ -352,6 +365,18 @@ public class WalletService {
       // nickname에 해당하는 파일 경로 생성
       String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
       // 조회한 내역 가져오기
+
+      // Moralis 최대 호출 제한 방지용
+      if (callCount >= 13) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        callCount = 0;
+      }
+      callCount++;
+
       BaseModel externalCompareBase = getWalletTokens(addressNickname);
       // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
       if (externalCompareBase == null) {
