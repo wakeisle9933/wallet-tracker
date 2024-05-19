@@ -1,15 +1,19 @@
 
-<img width="464" alt="intro-0423" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/2a14c0b8-1656-4d3b-b3d1-a4647193867b">
-<img width="464" alt="intro2-0423" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/f1ce24a8-d951-4491-8e62-70c022c91ee1">
+<img width="651" alt="preview1" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/695d8463-0bc9-459d-899b-5cd18d2c657b">
+<img width="662" alt="preview2" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/501035fc-70b7-49a3-88e5-88fc56cb5761">
+<img width="662" alt="preview3" src="https://github.com/wakeisle9933/wallet-tracker/assets/73478472/aa361fc5-a243-4ac6-8b94-78fdba0e7eab">
+
 
 # **🔍 Wallet Tracker by My Codegate**
 
 **✨Features**
 
 **🆓 Track your portfolio and balances for free without the need for paid APIs!**  
-**📧 Receive notifications every 10 minutes via email!**  
-**🧑‍🚀 Manage various features easily with Postman! It's already set up, so there's no need for additional configuration!**  
+**🎁 Don't miss a single airdrop!**  
+**📧 Receive notifications every 5 minutes via email!**  
 **🛑 Automatically blocks new scams, keeping you safe from the threat of fraud!**  
+**📊 Send email a report after tracking account finish a transaction!**  
+**🧑‍🚀 Manage various features easily with Postman! It's already set up, so there's no need for additional configuration!**  
 **🐋 Dockerfile included for easy setup!**  
 
 For the full development log, please refer to the following link. [Development Log](https://mycodegate.com/1100/)
