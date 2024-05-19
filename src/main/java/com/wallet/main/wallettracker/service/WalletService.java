@@ -684,7 +684,7 @@ public class WalletService {
           BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
               StringUtil.getTotalUsdAmount(soldQuantity.toString(), priceByTokenAddress));
 
-          if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+          if (usdValue.compareTo(BigDecimal.ONE) < 0) {
             addStatus = false;
           }
 
@@ -704,7 +704,7 @@ public class WalletService {
           BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
               StringUtil.getTotalUsdAmount(boughtQuantity.toString(), priceByTokenAddress));
 
-          if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+          if (usdValue.compareTo(BigDecimal.ONE) < 0) {
             addStatus = false;
           }
 
@@ -725,7 +725,7 @@ public class WalletService {
             StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
                 priceByTokenAddress));
 
-        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+        if (usdValue.compareTo(BigDecimal.ONE) < 0) {
           addStatus = false;
         }
         if (addStatus) {
@@ -749,7 +749,7 @@ public class WalletService {
             .get(internalBaseModel.getContractAddress().indexOf(contract));
         boolean addStatus = true;
 
-        if (!name.equals("BASE-ETH") && usdValue.compareTo(BigDecimal.ONE) < 0) {
+        if (usdValue.compareTo(BigDecimal.ONE) < 0) {
           addStatus = false;
         }
 
