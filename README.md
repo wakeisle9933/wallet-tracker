@@ -6,7 +6,7 @@
 
 # **🔍 Wallet Tracker by My Codegate**
 
-**✨Features**
+**<h2>✨ Features</h2>**
 
 **🆓 Track your portfolio and balances for free without the need for paid APIs!**  
 **🎁 Don't miss a single airdrop!**  
