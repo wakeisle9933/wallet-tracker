@@ -5,6 +5,7 @@ import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
 import java.io.FileNotFoundException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.util.retry.Retry;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +30,7 @@ public class MoralisService {
   public BaseModel getWalletTokenInfo(String[] addressNickname) throws FileNotFoundException {
     try {
 
-      String response = webClient.get()
+      String walletBalanceResponse = webClient.get()
           .uri(
               "https://deep-index.moralis.io/api/v2.2/" + addressNickname[0]
                   + "/balance?chain=base")
@@ -36,17 +39,20 @@ public class MoralisService {
               moralisApi)
           .retrieve()
           .bodyToMono(String.class)
+          .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(1))
+              .filter(throwable -> throwable instanceof WebClientResponseException))
           .block();
 
       List<String> nameList = new ArrayList<>();
       List<String> quantityList = new ArrayList<>();
       List<String> contractAddressList = new ArrayList<>();
       nameList.add("BASE-ETH");
-      quantityList.add(StringUtil.convertWeiToEther(new JSONObject(response).getString("balance")));
+      quantityList.add(
+          StringUtil.convertWeiToEther(new JSONObject(walletBalanceResponse).getString("balance")));
       contractAddressList.add(StringConstants.BASE_ETH_ADDRESS);
 
       // Moralis API 호출
-      response = webClient.get()
+      String walletTokenResponse = webClient.get()
           .uri(
               "https://deep-index.moralis.io/api/v2.2/" + addressNickname[0]
                   + "/erc20?chain=base")
@@ -55,10 +61,12 @@ public class MoralisService {
               moralisApi)
           .retrieve()
           .bodyToMono(String.class)
+          .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(1))
+              .filter(throwable -> throwable instanceof WebClientResponseException))
           .block();
 
       // JSON 파싱
-      JSONArray jsonArray = new JSONArray(response);
+      JSONArray jsonArray = new JSONArray(walletTokenResponse);
       for (int i = 0; i < jsonArray.length(); i++) {
         JSONObject jsonObject = jsonArray.getJSONObject(i);
         String name;
