@@ -2,6 +2,7 @@ package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.entity.WalletHistory;
 import com.wallet.main.wallettracker.entity.WalletHistoryResult;
+import com.wallet.main.wallettracker.model.HotPairModel;
 import com.wallet.main.wallettracker.model.MailModel;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
@@ -151,6 +152,53 @@ public class MailService {
     htmlContent.append("</body></html>");
     return htmlContent.toString();
   }
+
+  public String createHotPairHTML(List<HotPairModel> hotPairModels) {
+    StringBuilder htmlContent = new StringBuilder();
+    htmlContent.append("<html><body>");
+    htmlContent.append("<h2>BASE : Current Hot Pairs</h2>");
+
+    htmlContent.append("<table border='1' cellpadding='5'>");
+    htmlContent.append(
+        "<tr><th>Rank</th><th>Name</th><th>Market Cap</th><th>Holders</th><th>Address</th></tr>");
+
+    for (HotPairModel model : hotPairModels) {
+
+      String mcap = model.getMcap();
+      String mcapAlign = "right";
+      if (model.getMcap().equals("0.00")) {
+        mcap = "-";
+        mcapAlign = "center";
+      }
+
+      String holders = model.getHolders();
+      String holderAlign = "right";
+      if (model.getHolders().equals("0.00")) {
+        holders = "-";
+        holderAlign = "center";
+      }
+
+      htmlContent.append("<tr>")
+          .append("<td style='text-align: center; font-weight:bold;'>")
+          .append(model.getRank())
+          .append("</td>").append("<td style='text-align: left;'>")
+          .append(model.getName() + " (" + model.getSymbol() + ")")
+          .append("</td>").append("<td style='text-align: " + mcapAlign + "'>")
+          .append(mcap)
+          .append("</td>").append("<td style='text-align: " + holderAlign + "'>")
+          .append(holders)
+          .append("</td>").append("<td>")
+          .append(
+              "<a href='https://dextools.io/app/en/base/pair-explorer/" + model.getAddress() + "'>")
+          .append(model.getAddress())
+          .append("</td>")
+          .append("</tr>");
+    }
+    htmlContent.append("</table>");
+    htmlContent.append("</body></html>");
+    return htmlContent.toString();
+  }
+
 
   public void sendMail(MailModel model) throws FileNotFoundException, MessagingException {
     File file = new File(FilePathConstants.EMAIL_PATH);

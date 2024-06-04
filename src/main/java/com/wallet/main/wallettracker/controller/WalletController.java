@@ -1,7 +1,9 @@
 package com.wallet.main.wallettracker.controller;
 
+import com.wallet.main.wallettracker.service.DexToolsService;
 import com.wallet.main.wallettracker.service.WalletService;
 import jakarta.mail.MessagingException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WalletController {
 
   private final WalletService walletService;
+  private final DexToolsService dexToolsService;
 
   @GetMapping("/health")
   public ResponseEntity<String> healthCheck() {
@@ -57,6 +60,12 @@ public class WalletController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Failed to initialized wallet.");
     }
+  }
+
+  @GetMapping("/hotpair")
+  public ResponseEntity<String> checkHotPair() throws MessagingException, FileNotFoundException {
+    dexToolsService.sendHotPair();
+    return ResponseEntity.ok("Message send");
   }
 
 }

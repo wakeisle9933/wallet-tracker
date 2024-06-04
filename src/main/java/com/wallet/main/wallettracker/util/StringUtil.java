@@ -155,4 +155,16 @@ public class StringUtil {
     return convertedBalance.stripTrailingZeros().toPlainString();
   }
 
+  public static String formatMarketCap(double number) {
+    if (number < 1000) {
+      return String.format("%.2f", number);
+    } else if (number < 1000000) {
+      return String.format("%.2fK", number / 1000);
+    } else if (number < 1000000000) {
+      return String.format("%.2fM", number / 1000000);
+    } else {
+      return String.format("%.2fB", number / 1000000000);
+    }
+  }
+
 }
