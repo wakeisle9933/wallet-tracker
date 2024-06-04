@@ -42,7 +42,7 @@ public class MainScheduler {
   public void hotPairReporting() throws MessagingException, IOException {
     LocalTime now = LocalTime.now();
     int hour = now.getHour();
-    if (hour == 9 || hour == 12 || hour == 18 || hour == 23) {
+    if (hour == 8 || hour == 11 || hour == 17 || hour == 22) {
       if (schedulerConfig.isSchedulerEnabled()) {
         dexToolsService.sendHotPair();
       } else {
