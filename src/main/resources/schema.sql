@@ -2,6 +2,7 @@
 --DROP TABLE wallet_history_result;
 --DROP TABLE whitelist_token;
 --DROP TABLE blacklist_token;
+--DROP TABLE tracking_address;
 CREATE TABLE IF NOT EXISTS wallet_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chain TEXT NOT NULL,
@@ -42,12 +43,21 @@ CREATE TABLE IF NOT EXISTS whitelist_token
     created_date TEXT
 );
 
---DROP TABLE blacklist_token;
 CREATE TABLE IF NOT EXISTS blacklist_token
 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chain TEXT NOT NULL,
     name TEXT NOT NULL,
     contract_address TEXT NOT NULL,
+    created_date TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tracking_address
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chain TEXT NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    description TEXT,
     created_date TEXT
 );
