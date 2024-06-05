@@ -36,6 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 /src/main/resources/base/Address
+/src/main/resources/address/Address
 /src/main/resources/email/Emails
 /src/main/resources/application.properties
 /src/main/resources/wallet/*
