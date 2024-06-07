@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS tracking_address
 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chain TEXT NOT NULL,
-    name TEXT NOT NULL,
     address TEXT NOT NULL,
+    nickname TEXT NOT NULL,
     description TEXT,
     created_date TEXT
 );
