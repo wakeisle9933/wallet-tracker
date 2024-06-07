@@ -7,7 +7,9 @@ import lombok.Setter;
 @Setter
 public class AddressDto {
 
+  private String chain;
   private String address;
   private String nickname;
+  private String desc;
 
 }
