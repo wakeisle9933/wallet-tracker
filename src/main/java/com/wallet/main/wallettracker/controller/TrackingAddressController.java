@@ -1,6 +1,7 @@
 package com.wallet.main.wallettracker.controller;
 
 import com.wallet.main.wallettracker.dto.AddressDto;
+import com.wallet.main.wallettracker.entity.TrackingAddress;
 import com.wallet.main.wallettracker.service.ResourceAddressService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -15,25 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class ResourceAddressController {
+public class TrackingAddressController {
 
   private final ResourceAddressService resourceAddressService;
 
   @GetMapping("/address")
-  public String requestShowAddressContents() {
-    List<String> emailAddresses = resourceAddressService.showAddressContents();
-
-    StringBuilder sb = new StringBuilder();
-    for (String email : emailAddresses) {
-      sb.append(email).append("\n");
-    }
-
-    return sb.toString();
+  public List<TrackingAddress> requestShowAddressContents() {
+    List<TrackingAddress> addresses = resourceAddressService.showAddressContents();
+    return addresses;
   }
 
-  @GetMapping("/exist-address")
-  public ResponseEntity<String> requestExistAddress(String address) {
-    String name = resourceAddressService.ExistAddress(address);
+  @PostMapping("/exist-address")
+  public ResponseEntity<String> requestExistAddress(@RequestBody AddressDto addressDto) {
+    String name = resourceAddressService.ExistAddress(addressDto);
 
     if (!name.isEmpty()) {
       return ResponseEntity.ok(name);
@@ -44,8 +39,7 @@ public class ResourceAddressController {
 
   @PostMapping("/add-address")
   public ResponseEntity<String> requestAddAddressToFile(@RequestBody AddressDto addressDto) {
-    boolean isAdded = resourceAddressService.addAddressToFile(addressDto.getAddress(),
-        addressDto.getNickname());
+    boolean isAdded = resourceAddressService.addAddressToFile(addressDto);
 
     if (isAdded) {
       return ResponseEntity.ok("Address added successfully.");
@@ -54,10 +48,12 @@ public class ResourceAddressController {
     }
   }
 
-  @DeleteMapping("/remove-address/{address}")
+  @DeleteMapping("/remove-address/{chain}/{address}")
   public ResponseEntity<String> requestRemoveAddressFromFile(
+      @PathVariable("chain") String chain,
       @PathVariable("address") String address) {
-    boolean isRemoved = resourceAddressService.removeAddressFromFile(address);
+
+    boolean isRemoved = resourceAddressService.removeAddressFromFile(chain, address);
 
     if (isRemoved) {
       return ResponseEntity.ok("Address removed successfully.");
