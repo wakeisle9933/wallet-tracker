@@ -31,5 +31,8 @@ public class ChainMapping {
 
   @Column(nullable = false)
   private String moralisChainId;
-  
+
+  @Column(nullable = false)
+  private String explorer;
+
 }

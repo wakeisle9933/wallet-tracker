@@ -68,5 +68,6 @@ CREATE TABLE IF NOT EXISTS chain_mapping
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     dextools_chain_id TEXT NOT NULL,
-    moralis_chain_id TEXT NOT NULL
+    moralis_chain_id TEXT NOT NULL,
+    explorer TEXT NOT NULL
 );
