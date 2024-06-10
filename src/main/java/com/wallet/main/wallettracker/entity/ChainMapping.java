@@ -33,6 +33,9 @@ public class ChainMapping {
   private String moralisChainId;
 
   @Column(nullable = false)
-  private String explorer;
+  private String block_explorer;
+
+  @Column(nullable = false)
+  private String dex_explorer;
 
 }

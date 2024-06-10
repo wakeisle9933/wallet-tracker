@@ -69,5 +69,6 @@ CREATE TABLE IF NOT EXISTS chain_mapping
     name TEXT NOT NULL,
     dextools_chain_id TEXT NOT NULL,
     moralis_chain_id TEXT NOT NULL,
-    explorer TEXT NOT NULL
+    block_explorer TEXT NOT NULL,
+    dex_explorer TEXT NOT NULL
 );
