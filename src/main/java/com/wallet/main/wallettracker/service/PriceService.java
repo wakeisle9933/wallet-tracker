@@ -2,22 +2,13 @@ package com.wallet.main.wallettracker.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wallet.main.wallettracker.model.WalletModel;
-import com.wallet.main.wallettracker.util.FilePathConstants;
+import com.wallet.main.wallettracker.repository.ChainMappingRepository;
 import com.wallet.main.wallettracker.util.StringConstants;
-import com.wallet.main.wallettracker.util.WalletLineParseUtil;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,24 +27,32 @@ public class PriceService {
   @Value("${dextools.api}")
   private String dextoolsApi;
 
+  private final ChainMappingRepository chainMappingRepository;
+
   // API 변경 대비
-  public String getPriceByTokenAddress(String address) {
-    return getDextoolsPriceByContract(address);
+  public String getPriceByTokenAddress(String chain, String address) {
+    return getDextoolsPriceByContract(chain, address);
   }
 
-  public String getDextoolsPriceByContract(String address) {
-    return getDextoolsPriceByContractWithRetry(address, 0);
+  public String getDextoolsPriceByContract(String chain, String address) {
+    return getDextoolsPriceByContractWithRetry(chain, address, 0);
   }
 
-  public String getDextoolsPriceByContractWithRetry(String address, int retryCount) {
+  public String getDextoolsPriceByContractWithRetry(String chain, String address, int retryCount) {
     // Base ETH를 WETH와 동일하게 처리
-    if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
-      address = "0x4200000000000000000000000000000000000006";
+    if (chain.equals("base")) {
+      if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
+        address = "0x4200000000000000000000000000000000000006";
+      }
+    } else if (chain.equals("ether")) {
+      if (address.equals(StringConstants.BASE_ETH_ADDRESS)) {
+        address = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+      }
     }
 
     HttpClient client = HttpClient.newHttpClient();
-    String url = String.format("https://public-api.dextools.io/trial/v2/token/%s/%s/price", "base",
-        address);
+    String url =
+        "https://public-api.dextools.io/trial/v2/token/" + chain + "/" + address + "/price";
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .header("accept", "application/json")
@@ -80,7 +79,7 @@ public class PriceService {
 
       if (retryCount < 2) {
         Thread.sleep(1000);
-        return getDextoolsPriceByContractWithRetry(address, retryCount + 1);
+        return getDextoolsPriceByContractWithRetry(chain, address, retryCount + 1);
       }
 
       return "-";
@@ -121,35 +120,5 @@ public class PriceService {
       return "-";
     }
   }
-
-  public boolean priceTrackingByFile() {
-    try {
-      Path path = Paths.get(FilePathConstants.TRACKINGLIST_PATH);
-      List<String> lines = Files.readAllLines(path);
-      List<String> modifiedLines = new ArrayList<>();
-      List<WalletModel> modelList = new ArrayList<>();
-
-      for (String line : lines) {
-        WalletModel model = WalletLineParseUtil.parse(line);
-
-        modelList.add(
-            WalletModel.builder().name(model.getName())
-                .amount(getPriceByTokenAddress(model.getContractAddress()))
-                .contractAddress(model.getContractAddress())
-                .build());
-
-        if (Integer.parseInt(model.getAmount()) > 1) {
-          modifiedLines.add(model.getName() + " " + (Integer.parseInt(model.getAmount()) - 1) + " "
-              + model.getContractAddress());
-        }
-      }
-
-      Files.write(path, modifiedLines, StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return true;
-  }
-
 
 }

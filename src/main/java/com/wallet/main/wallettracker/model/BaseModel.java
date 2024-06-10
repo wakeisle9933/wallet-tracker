@@ -14,6 +14,7 @@ public class BaseModel {
   String walletAddress;
   List<String> name;
   List<String> quantity;
+  List<String> chain;
   List<String> contractAddress;
 
 }

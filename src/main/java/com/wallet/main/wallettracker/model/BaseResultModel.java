@@ -12,6 +12,7 @@ public class BaseResultModel {
 
   String nickname;
   String contractAddress;
+  String chain;
   List<BaseCompareModel> baseCompareModelList;
 
 }

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SchedulerConfig {
 
-  private boolean isSchedulerEnabled = true;
+  private boolean isSchedulerEnabled = false;
 
   public boolean isSchedulerEnabled() {
     return isSchedulerEnabled;

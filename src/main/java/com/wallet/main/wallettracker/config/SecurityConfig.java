@@ -30,7 +30,7 @@ public class SecurityConfig {
     http
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/base/**", "/chromedriver/**", "/email/**", "/filter/**",
+            .requestMatchers("/address/**", "/chromedriver/**", "/email/**", "/filter/**",
                 "/wallet/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/**").authenticated()  // POST 메소드는 인증 필요
             .requestMatchers(HttpMethod.POST, "/**").authenticated()  // POST 메소드는 인증 필요

@@ -1,6 +1,7 @@
 package com.wallet.main.wallettracker.service;
 
 import com.wallet.main.wallettracker.entity.BlacklistToken;
+import com.wallet.main.wallettracker.entity.TrackingAddress;
 import com.wallet.main.wallettracker.entity.WalletHistory;
 import com.wallet.main.wallettracker.entity.WhitelistToken;
 import com.wallet.main.wallettracker.model.BaseCompareModel;
@@ -19,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -57,6 +57,7 @@ public class WalletService {
 
   private static final String EXCLUDE_FILE = "Nickname_base";
 
+  private final ResourceAddressService resourceAddressService;
   private final SeleniumService seleniumService;
   private final MoralisService moralisService;
   private final PriceService priceService;
@@ -65,15 +66,13 @@ public class WalletService {
   private final WhitelistTokenService whitelistTokenService;
   private final BlacklistTokenService blacklistTokenService;
 
-  public BaseModel getWalletTokens(String[] addressNickname) throws FileNotFoundException {
+  public BaseModel getWalletTokens(TrackingAddress trackingAddress) throws FileNotFoundException {
     // return seleniumService.seleniumBaseByI2Scan(addressNickname);
-    return moralisService.getWalletTokenInfo(addressNickname);
+    return moralisService.getWalletTokenInfo(trackingAddress);
   }
 
   public void sendPeriodicEmail() throws IOException, MessagingException {
-    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
-    BufferedReader addressReader = new BufferedReader(new FileReader(file));
-    List<String> baseAddresses = addressReader.lines().toList();
+    List<TrackingAddress> trackingAddresses = resourceAddressService.showAddressContents();
     List<BaseResultModel> baseResultModelList = new ArrayList<>();
 
     List<WhitelistToken> whitelistTokens = whitelistTokenService.findAll();
@@ -88,9 +87,7 @@ public class WalletService {
         .collect(Collectors.toList());
 
     int callCount = 0;
-    for (String address : baseAddresses) {
-      String[] addressNickname = address.split(" ");
-
+    for (TrackingAddress trackingAddress : trackingAddresses) {
       // Moralis 최대 호출 제한 방지용
       if (callCount >= 13) {
         try {
@@ -103,7 +100,7 @@ public class WalletService {
       callCount++;
 
       // 조회한 내역 가져오기
-      BaseModel externalCompareBase = getWalletTokens(addressNickname);
+      BaseModel externalCompareBase = getWalletTokens(trackingAddress);
       List<String> name = new ArrayList<>();
       List<String> quantity = new ArrayList<>();
       List<String> contractAddress = new ArrayList<>();
@@ -133,7 +130,7 @@ public class WalletService {
           // 1초당 최대 1번 호출 가능
           Thread.sleep(1250);
 
-          LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+          LocalDateTime now = LocalDateTime.now();
           LocalDateTime twoYearsAgo = now.minusYears(2);
           DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
           String queryParams =
@@ -144,7 +141,8 @@ public class WalletService {
 
           HttpRequest request = HttpRequest.newBuilder()
               .uri(new URI(
-                  "https://public-api.dextools.io/trial/v2/token/base/"
+                  "https://public-api.dextools.io/trial/v2/token/" + trackingAddress.getChain()
+                      + "/"
                       + externalCompareBase.getContractAddress().get(i)
                       + "/pools" + queryParams))
               .header("accept", "application/json")
@@ -164,7 +162,7 @@ public class WalletService {
 
             // Pair 20개 넘을 경우 Whitelist 처리
             if (data.getInt("totalPages") > 1) {
-              whitelistTokenService.save(WhitelistToken.builder().chain("base")
+              whitelistTokenService.save(WhitelistToken.builder().chain(trackingAddress.getChain())
                   .name(externalCompareBase.getName().get(i))
                   .contract_address(externalCompareBase.getContractAddress().get(i))
                   .created_date(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
@@ -180,42 +178,49 @@ public class WalletService {
 
               // UNISWAP, SUSHISWAP 대상 WETH만
               if ((exchangeName.equals("Uniswap V2") || exchangeName.equals("Uniswap V3")
-                  || exchangeName.equals("Sushiswap V2") || exchangeName.equals("Sushiswap V3")) &&
-                  sideTokenAddress.equals("0x4200000000000000000000000000000000000006")) {
-                String exchangeAddress = result.getString("address");
+                  || exchangeName.equals("Sushiswap V2") || exchangeName.equals("Sushiswap V3"))) {
 
-                // 1초당 최대 1번 호출 가능
-                Thread.sleep(1250);
+                // Trading Pairs -> need to be improvement
+                if (sideTokenAddress.equals("0x4200000000000000000000000000000000000006")
+                    || sideTokenAddress.equals("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")) {
 
-                HttpClient liquidityClient = HttpClient.newHttpClient();
+                  String exchangeAddress = result.getString("address");
 
-                HttpRequest liquidityRequest = HttpRequest.newBuilder()
-                    .uri(new URI(
-                        "https://public-api.dextools.io/trial/v2/pool/base/" + exchangeAddress
-                            + "/liquidity"))
-                    .header("accept", "application/json")
-                    .header("X-API-Key", dextoolsApi)
-                    .GET()
-                    .build();
+                  // 1초당 최대 1번 호출 가능
+                  Thread.sleep(1250);
 
-                HttpResponse<String> liquidityResponse = liquidityClient.send(liquidityRequest,
-                    HttpResponse.BodyHandlers.ofString());
+                  HttpClient liquidityClient = HttpClient.newHttpClient();
 
-                if (liquidityResponse.statusCode() == 200) {
-                  JSONObject jsonResponse = new JSONObject(liquidityResponse.body());
+                  HttpRequest liquidityRequest = HttpRequest.newBuilder()
+                      .uri(new URI(
+                          "https://public-api.dextools.io/trial/v2/pool/"
+                              + trackingAddress.getChain()
+                              + "/" + exchangeAddress
+                              + "/liquidity"))
+                      .header("accept", "application/json")
+                      .header("X-API-Key", dextoolsApi)
+                      .GET()
+                      .build();
 
-                  // 데이터에서 liquidity 값을 추출
-                  BigDecimal liquidity = jsonResponse.getJSONObject("data")
-                      .optBigDecimal("liquidity", BigDecimal.ZERO);
+                  HttpResponse<String> liquidityResponse = liquidityClient.send(liquidityRequest,
+                      HttpResponse.BodyHandlers.ofString());
 
-                  if (liquidity.compareTo(BigDecimal.valueOf(1000)) >= 0) {
-                    trustablePair = true;
-                    break;
+                  if (liquidityResponse.statusCode() == 200) {
+                    JSONObject jsonResponse = new JSONObject(liquidityResponse.body());
+
+                    // 데이터에서 liquidity 값을 추출
+                    BigDecimal liquidity = jsonResponse.getJSONObject("data")
+                        .optBigDecimal("liquidity", BigDecimal.ZERO);
+
+                    if (liquidity.compareTo(BigDecimal.valueOf(1000)) >= 0) {
+                      trustablePair = true;
+                      break;
+                    }
+
+                  } else {
+                    log.error(
+                        "HTTP request failed with status code: " + liquidityResponse.statusCode());
                   }
-
-                } else {
-                  log.error(
-                      "HTTP request failed with status code: " + liquidityResponse.statusCode());
                 }
               }
             }
@@ -224,13 +229,13 @@ public class WalletService {
               name.add(externalCompareBase.getName().get(i));
               quantity.add(externalCompareBase.getQuantity().get(i));
               contractAddress.add(externalCompareBase.getContractAddress().get(i));
-              whitelistTokenService.save(WhitelistToken.builder().chain("base")
+              whitelistTokenService.save(WhitelistToken.builder().chain(trackingAddress.getChain())
                   .name(externalCompareBase.getName().get(i))
                   .contract_address(externalCompareBase.getContractAddress().get(i))
                   .created_date(LocalDateTime.now()
                       .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build());
             } else {
-              blacklistTokenService.save(BlacklistToken.builder().chain("base")
+              blacklistTokenService.save(BlacklistToken.builder().chain(trackingAddress.getChain())
                   .name(externalCompareBase.getName().get(i))
                   .contract_address(externalCompareBase.getContractAddress().get(i))
                   .created_date(LocalDateTime.now()
@@ -253,7 +258,7 @@ public class WalletService {
       externalCompareBase.setQuantity(quantity);
       externalCompareBase.setContractAddress(contractAddress);
       for (int i = 0; i < externalCompareBase.getContractAddress().size(); i++) {
-        String priceByTokenAddress = priceService.getPriceByTokenAddress(
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(trackingAddress.getChain(),
             externalCompareBase.getContractAddress().get(i));
         String totalUsdAmount = StringUtil.getTotalUsdAmount(
             externalCompareBase.getQuantity().get(i), priceByTokenAddress);
@@ -278,8 +283,9 @@ public class WalletService {
         });
 
         baseResultModelList.add(
-            BaseResultModel.builder().nickname(addressNickname[1])
-                .contractAddress(addressNickname[0])
+            BaseResultModel.builder().nickname(trackingAddress.getNickname())
+                .contractAddress(trackingAddress.getAddress())
+                .chain(trackingAddress.getChain())
                 .baseCompareModelList(baseCompareModelList).build());
       }
     }
@@ -307,6 +313,8 @@ public class WalletService {
             .append(baseResultModel.getContractAddress())
             .append("?tab=tokens_erc20' target='_blank'>")
             .append(baseResultModel.getNickname())
+            .append(" - ")
+            .append(baseResultModel.getChain())
             .append(" - ")
             .append(baseResultModel.getContractAddress())
             .append("</a>")
@@ -352,19 +360,14 @@ public class WalletService {
   }
 
   public void sendCompareRemainBalanceByI2Scan() throws IOException, MessagingException {
-    File file = new File(FilePathConstants.BASE_ADDRESS_PATH);
-    BufferedReader addressReader = new BufferedReader(new FileReader(file));
-    List<String> baseAddresses = addressReader.lines().toList();
+    List<TrackingAddress> trackingAddresses = resourceAddressService.showAddressContents();
     ArrayList<BaseResultModel> baseResultModelList = new ArrayList<>();
 
     int callCount = 0;
-    for (String address : baseAddresses) {
-      String[] addressNickname = address.split(" ");
-      String nickname = addressNickname[1];
-
+    for (TrackingAddress trackingAddress : trackingAddresses) {
       // nickname에 해당하는 파일 경로 생성
-      String nicknameFilePath = "src/main/resources/wallet/" + nickname + "_base";
-      // 조회한 내역 가져오기
+      String nicknameFilePath = "src/main/resources/wallet/" + trackingAddress.getNickname() + "_"
+          + trackingAddress.getChain();
 
       // Moralis 최대 호출 제한 방지용
       if (callCount >= 13) {
@@ -377,7 +380,7 @@ public class WalletService {
       }
       callCount++;
 
-      BaseModel externalCompareBase = getWalletTokens(addressNickname);
+      BaseModel externalCompareBase = getWalletTokens(trackingAddress);
       // 조회한 내용 없을 경우 continue 처리, 10분마다 조회하므로 별 문제없어 보임
       if (externalCompareBase == null) {
         log.info("No results, Email Will Not Send");
@@ -405,13 +408,14 @@ public class WalletService {
           contractAddressList.add(walletModel.getContractAddress());
         }
 
-        BaseModel internalBaseModel = BaseModel.builder().nickname(addressNickname[1])
+        BaseModel internalBaseModel = BaseModel.builder().nickname(trackingAddress.getNickname())
             .name(nameList)
             .quantity(quantityList)
             .contractAddress(contractAddressList)
             .build();
 
-        BaseResultModel baseResultModel = compareBase(internalBaseModel, externalCompareBase);
+        BaseResultModel baseResultModel = compareBase(internalBaseModel, externalCompareBase,
+            trackingAddress.getChain());
 
         // 사이트 에러 시 대응 코드
         // 20개 이상 변동이 있을 경우에는 파일만 갱신하고 이메일 발송 X
@@ -491,7 +495,7 @@ public class WalletService {
           //String averageUnitPrice = walletHistoryService.calculateAveragePrice(baseResultModel.getContractAddress(), baseCompareModel, price);
           walletHistoryService.save(
               WalletHistory.builder()
-                  .chain("base")
+                  .chain("address")
                   .address(baseResultModel.getContractAddress())
                   .nickname(baseResultModel.getNickname()).status(baseCompareModel.getStatus())
                   .currency(baseCompareModel.getName())
@@ -663,7 +667,7 @@ public class WalletService {
   }
 
   private BaseResultModel compareBase(BaseModel internalBaseModel,
-      BaseModel externalBaseModel) {
+      BaseModel externalBaseModel, String chain) {
     List<BaseCompareModel> compareModelList = new ArrayList<>();
 
     // name을 contract로, quantity를 value로 하는 Map 생성
@@ -705,7 +709,7 @@ public class WalletService {
 
         if (internalQuantity.compareTo(externalQuantity) > 0) {
           BigDecimal soldQuantity = internalQuantity.subtract(externalQuantity);
-          String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+          String priceByTokenAddress = priceService.getPriceByTokenAddress(chain, contract);
           BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
               StringUtil.getTotalUsdAmount(soldQuantity.toString(), priceByTokenAddress));
 
@@ -725,7 +729,7 @@ public class WalletService {
           }
         } else if (internalQuantity.compareTo(externalQuantity) < 0) {
           BigDecimal boughtQuantity = externalQuantity.subtract(internalQuantity);
-          String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+          String priceByTokenAddress = priceService.getPriceByTokenAddress(chain, contract);
           BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
               StringUtil.getTotalUsdAmount(boughtQuantity.toString(), priceByTokenAddress));
 
@@ -745,7 +749,7 @@ public class WalletService {
           }
         }
       } else {
-        String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(chain, contract);
         BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
             StringUtil.getTotalUsdAmount(externalMap.get(contract).toString(),
                 priceByTokenAddress));
@@ -766,7 +770,7 @@ public class WalletService {
 
     for (String contract : internalMap.keySet()) {
       if (!externalMap.containsKey(contract)) {
-        String priceByTokenAddress = priceService.getPriceByTokenAddress(contract);
+        String priceByTokenAddress = priceService.getPriceByTokenAddress(chain, contract);
         BigDecimal usdValue = BigDecimalUtil.formatStringToBigDecimal(
             StringUtil.getTotalUsdAmount(internalMap.get(contract).toString(),
                 priceByTokenAddress));

@@ -3,6 +3,7 @@
 --DROP TABLE whitelist_token;
 --DROP TABLE blacklist_token;
 --DROP TABLE tracking_address;
+--DROP TABLE chain_mapping;
 CREATE TABLE IF NOT EXISTS wallet_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chain TEXT NOT NULL,
@@ -60,4 +61,12 @@ CREATE TABLE IF NOT EXISTS tracking_address
     nickname TEXT NOT NULL,
     description TEXT,
     created_date TEXT
+);
+
+CREATE TABLE IF NOT EXISTS chain_mapping
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dextools_chain_id TEXT NOT NULL,
+    moralis_chain_id TEXT NOT NULL
 );

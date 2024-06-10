@@ -9,7 +9,7 @@ public class FilePathConstants {
           + File.separator + "Emails";
 
   public static final String BASE_ADDRESS_PATH =
-      "src" + File.separator + "main" + File.separator + "resources" + File.separator + "base"
+      "src" + File.separator + "main" + File.separator + "resources" + File.separator + "address"
           + File.separator + "Address";
 
   public static final String FILTER_KEYWORD_PATH =

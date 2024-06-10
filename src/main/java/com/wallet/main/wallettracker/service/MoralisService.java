@@ -1,5 +1,6 @@
 package com.wallet.main.wallettracker.service;
 
+import com.wallet.main.wallettracker.entity.TrackingAddress;
 import com.wallet.main.wallettracker.model.BaseModel;
 import com.wallet.main.wallettracker.util.FilterKeywordUtil;
 import com.wallet.main.wallettracker.util.StringConstants;
@@ -25,15 +26,19 @@ public class MoralisService {
   private String moralisApi;
 
   private final WebClient webClient;
+  private final ChainMappingService chainMappingService;
   private final PriceService priceService;
 
-  public BaseModel getWalletTokenInfo(String[] addressNickname) throws FileNotFoundException {
+  public BaseModel getWalletTokenInfo(TrackingAddress trackingAddress)
+      throws FileNotFoundException {
     try {
+
+      String chain = chainMappingService.getMoralisChainIdByDextools(trackingAddress.getChain());
 
       String walletBalanceResponse = webClient.get()
           .uri(
-              "https://deep-index.moralis.io/api/v2.2/" + addressNickname[0]
-                  + "/balance?chain=base")
+              "https://deep-index.moralis.io/api/v2.2/" + trackingAddress.getAddress()
+                  + "/balance?chain=" + chain)
           .header("accept", "application/json")
           .header("X-API-Key",
               moralisApi)
@@ -46,7 +51,7 @@ public class MoralisService {
       List<String> nameList = new ArrayList<>();
       List<String> quantityList = new ArrayList<>();
       List<String> contractAddressList = new ArrayList<>();
-      nameList.add("BASE-ETH");
+      nameList.add("ETH");
       quantityList.add(
           StringUtil.convertWeiToEther(new JSONObject(walletBalanceResponse).getString("balance")));
       contractAddressList.add(StringConstants.BASE_ETH_ADDRESS);
@@ -54,8 +59,8 @@ public class MoralisService {
       // Moralis API 호출
       String walletTokenResponse = webClient.get()
           .uri(
-              "https://deep-index.moralis.io/api/v2.2/" + addressNickname[0]
-                  + "/erc20?chain=base")
+              "https://deep-index.moralis.io/api/v2.2/" + trackingAddress.getAddress()
+                  + "/erc20?chain=" + chain)
           .header("accept", "application/json")
           .header("X-API-Key",
               moralisApi)
@@ -87,8 +92,8 @@ public class MoralisService {
         }
       }
       return BaseModel.builder()
-          .nickname(addressNickname[1])
-          .walletAddress(addressNickname[0])
+          .nickname(trackingAddress.getNickname())
+          .walletAddress(trackingAddress.getAddress())
           .name(nameList)
           .quantity(quantityList)
           .contractAddress(contractAddressList)
