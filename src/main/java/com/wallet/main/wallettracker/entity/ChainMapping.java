@@ -33,6 +33,9 @@ public class ChainMapping {
   private String moralisChainId;
 
   @Column(nullable = false)
+  private String tokenSnifferId;
+
+  @Column(nullable = false)
   private String blockExplorer;
 
   @Column(nullable = false)

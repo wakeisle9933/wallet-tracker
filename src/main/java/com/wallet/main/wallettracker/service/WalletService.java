@@ -310,12 +310,12 @@ public class WalletService {
     for (BaseResultModel baseResultModel : baseResultModelList) {
       if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
 
-        String blockExplorerByDextools = chainMappingService.getBlockExplorerByDextools(
+        String blockExplorer = chainMappingService.getBlockExplorerByDextools(
             baseResultModel.getChain());
 
         htmlContent.append("<h3>")
             .append("<a href='")
-            .append(blockExplorerByDextools)
+            .append(blockExplorer)
             .append(baseResultModel.getContractAddress())
             .append("' target='_blank'>")
             .append(baseResultModel.getNickname())
@@ -457,12 +457,14 @@ public class WalletService {
     for (BaseResultModel baseResultModel : baseResultModelList) {
       if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
 
-        String blockExplorerByDextools = chainMappingService.getBlockExplorerByDextools(
+        String blockExplorer = chainMappingService.getBlockExplorerByDextools(
+            baseResultModel.getChain());
+        String tokenSnifferId = chainMappingService.getTokenSnifferExplorerByDextools(
             baseResultModel.getChain());
 
         htmlContent.append("<h3>")
             .append("<a href='")
-            .append(blockExplorerByDextools)
+            .append(blockExplorer)
             .append(baseResultModel.getContractAddress())
             .append("' target='_blank'>")
             .append(baseResultModel.getNickname())
@@ -509,7 +511,7 @@ public class WalletService {
           //String averageUnitPrice = walletHistoryService.calculateAveragePrice(baseResultModel.getContractAddress(), baseCompareModel, price);
           walletHistoryService.save(
               WalletHistory.builder()
-                  .chain("address")
+                  .chain(baseResultModel.getChain())
                   .address(baseResultModel.getContractAddress())
                   .nickname(baseResultModel.getNickname()).status(baseCompareModel.getStatus())
                   .currency(baseCompareModel.getName())
@@ -585,9 +587,8 @@ public class WalletService {
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/" + baseResultModel.getChain() + "/pair-explorer/"
                     + baseCompareModel.getContractAddress();
-            String tokenSnifferUrl =
-                "https://tokensniffer.com/token/base/"
-                    + baseCompareModel.getContractAddress();
+            String tokenSnifferUrl = "https://tokensniffer.com/token/" + tokenSnifferId + "/"
+                + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
               htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
@@ -624,9 +625,8 @@ public class WalletService {
             String dexToolsUrl =
                 "https://www.dextools.io/app/en/" + baseResultModel.getChain() + "/pair-explorer/"
                     + baseCompareModel.getContractAddress();
-            String tokenSnifferUrl =
-                "https://tokensniffer.com/token/base/"
-                    + baseCompareModel.getContractAddress();
+            String tokenSnifferUrl = "https://tokensniffer.com/token/" + tokenSnifferId + "/"
+                + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
               htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())

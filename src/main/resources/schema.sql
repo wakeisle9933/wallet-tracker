@@ -1,9 +1,9 @@
---DROP TABLE wallet_history;
---DROP TABLE wallet_history_result;
---DROP TABLE whitelist_token;
---DROP TABLE blacklist_token;
---DROP TABLE tracking_address;
---DROP TABLE chain_mapping;
+--DROP TABLE IF EXISTS wallet_history;
+--DROP TABLE IF EXISTS wallet_history_result;
+--DROP TABLE IF EXISTS whitelist_token;
+--DROP TABLE IF EXISTS blacklist_token;
+--DROP TABLE IF EXISTS tracking_address;
+--DROP TABLE IF EXISTS chain_mapping;
 CREATE TABLE IF NOT EXISTS wallet_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chain TEXT NOT NULL,
@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS chain_mapping
     name TEXT NOT NULL,
     dextools_chain_id TEXT NOT NULL,
     moralis_chain_id TEXT NOT NULL,
+    token_sniffer_id TEXT NOT NULL,
     block_explorer TEXT NOT NULL,
     dex_explorer TEXT NOT NULL
 );

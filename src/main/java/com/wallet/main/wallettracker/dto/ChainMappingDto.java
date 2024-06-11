@@ -10,6 +10,7 @@ public class ChainMappingDto {
   private String name;
   private String dextools_chain_id;
   private String moralis_chain_id;
+  private String token_sniffer_id;
   private String block_explorer;
   private String dex_explorer;
 

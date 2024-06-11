@@ -38,8 +38,9 @@ public class ChainMappingController {
       @RequestBody ChainMappingDto chainMappingDto) {
     try {
       chainMappingService.save(ChainMapping.builder().name(chainMappingDto.getName())
-          .dexExplorer(chainMappingDto.getDextools_chain_id())
+          .dextoolsChainId(chainMappingDto.getDextools_chain_id())
           .moralisChainId(chainMappingDto.getMoralis_chain_id())
+          .tokenSnifferId(chainMappingDto.getToken_sniffer_id())
           .blockExplorer(chainMappingDto.getBlock_explorer())
           .dexExplorer(chainMappingDto.getDex_explorer()).build());
       return ResponseEntity.ok("chainMapping added successfully.");

@@ -23,6 +23,11 @@ public class ChainMappingService {
     return chainMapping.getBlockExplorer();
   }
 
+  public String getTokenSnifferExplorerByDextools(String dextoolsChainId) {
+    ChainMapping chainMapping = chainMappingRepository.findByDextoolsChainId(dextoolsChainId);
+    return chainMapping.getTokenSnifferId();
+  }
+
   public List<ChainMapping> findAll() {
     return chainMappingRepository.findAll();
   }
