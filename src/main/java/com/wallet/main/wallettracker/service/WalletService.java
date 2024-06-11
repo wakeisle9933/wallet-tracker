@@ -422,6 +422,7 @@ public class WalletService {
 
         BaseResultModel baseResultModel = compareBase(internalBaseModel, externalCompareBase,
             trackingAddress.getChain());
+        baseResultModel.setChain(trackingAddress.getChain());
 
         // 사이트 에러 시 대응 코드
         // 20개 이상 변동이 있을 경우에는 파일만 갱신하고 이메일 발송 X
@@ -455,11 +456,18 @@ public class WalletService {
 
     for (BaseResultModel baseResultModel : baseResultModelList) {
       if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
+
+        String blockExplorerByDextools = chainMappingService.getBlockExplorerByDextools(
+            baseResultModel.getChain());
+
         htmlContent.append("<h3>")
-            .append("<a href='https://base.blockscout.com/address/")
+            .append("<a href='")
+            .append(blockExplorerByDextools)
             .append(baseResultModel.getContractAddress())
-            .append("?tab=tokens_erc20' target='_blank'>")
+            .append("' target='_blank'>")
             .append(baseResultModel.getNickname())
+            .append(" - ")
+            .append(baseResultModel.getChain())
             .append(" - ")
             .append(baseResultModel.getContractAddress())
             .append("</a>")
@@ -575,7 +583,7 @@ public class WalletService {
               //.append("<td style='text-align: center;'>").append("-").append("</td>");
             }
             String dexToolsUrl =
-                "https://www.dextools.io/app/en/base/pair-explorer/"
+                "https://www.dextools.io/app/en/" + baseResultModel.getChain() + "/pair-explorer/"
                     + baseCompareModel.getContractAddress();
             String tokenSnifferUrl =
                 "https://tokensniffer.com/token/base/"
@@ -614,7 +622,7 @@ public class WalletService {
             //.append(StringUtil.formatPriceWithSubscript(averageUnitPrice.toString()))
             //.append("</td>");
             String dexToolsUrl =
-                "https://www.dextools.io/app/en/base/pair-explorer/"
+                "https://www.dextools.io/app/en/" + baseResultModel.getChain() + "/pair-explorer/"
                     + baseCompareModel.getContractAddress();
             String tokenSnifferUrl =
                 "https://tokensniffer.com/token/base/"
