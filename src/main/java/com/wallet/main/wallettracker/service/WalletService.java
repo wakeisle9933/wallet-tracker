@@ -65,6 +65,7 @@ public class WalletService {
   private final MailService mailService;
   private final WhitelistTokenService whitelistTokenService;
   private final BlacklistTokenService blacklistTokenService;
+  private final ChainMappingService chainMappingService;
 
   public BaseModel getWalletTokens(TrackingAddress trackingAddress) throws FileNotFoundException {
     // return seleniumService.seleniumBaseByI2Scan(addressNickname);
@@ -308,10 +309,15 @@ public class WalletService {
 
     for (BaseResultModel baseResultModel : baseResultModelList) {
       if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
+
+        String blockExplorerByDextools = chainMappingService.getBlockExplorerByDextools(
+            baseResultModel.getChain());
+
         htmlContent.append("<h3>")
-            .append("<a href='https://base.blockscout.com/address/")
+            .append("<a href='")
+            .append(blockExplorerByDextools)
             .append(baseResultModel.getContractAddress())
-            .append("?tab=tokens_erc20' target='_blank'>")
+            .append("' target='_blank'>")
             .append(baseResultModel.getNickname())
             .append(" - ")
             .append(baseResultModel.getChain())
@@ -334,7 +340,7 @@ public class WalletService {
               .append("</td>");
 
           String dexToolsUrl =
-              "https://www.dextools.io/app/en/base/pair-explorer/"
+              "https://www.dextools.io/app/en/" + baseResultModel.getChain() + "/pair-explorer/"
                   + baseCompareModel.getContractAddress();
 
           if (baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {

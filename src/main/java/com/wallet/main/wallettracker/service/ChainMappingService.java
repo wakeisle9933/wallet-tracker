@@ -18,6 +18,11 @@ public class ChainMappingService {
     return chainMapping.getMoralisChainId();
   }
 
+  public String getBlockExplorerByDextools(String dextoolsChainId) {
+    ChainMapping chainMapping = chainMappingRepository.findByDextoolsChainId(dextoolsChainId);
+    return chainMapping.getBlockExplorer();
+  }
+
   public List<ChainMapping> findAll() {
     return chainMappingRepository.findAll();
   }

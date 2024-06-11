@@ -38,10 +38,10 @@ public class ChainMappingController {
       @RequestBody ChainMappingDto chainMappingDto) {
     try {
       chainMappingService.save(ChainMapping.builder().name(chainMappingDto.getName())
-          .dextoolsChainId(chainMappingDto.getDextools_chain_id())
+          .dexExplorer(chainMappingDto.getDextools_chain_id())
           .moralisChainId(chainMappingDto.getMoralis_chain_id())
-          .block_explorer(chainMappingDto.getBlock_explorer())
-          .dex_explorer(chainMappingDto.getDex_explorer()).build());
+          .blockExplorer(chainMappingDto.getBlock_explorer())
+          .dexExplorer(chainMappingDto.getDex_explorer()).build());
       return ResponseEntity.ok("chainMapping added successfully.");
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
