@@ -18,7 +18,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -197,6 +199,7 @@ public class MailService {
     }
     htmlContent.append("</table>");
     htmlContent.append("</body></html>");
+
     return htmlContent.toString();
   }
 
@@ -222,6 +225,9 @@ public class MailService {
             + "<th>result</th>"
             + "</tr>");
 
+    Map<String, Double> profitRanking = new HashMap<>();
+    Map<String, Integer> profitCountRanking = new HashMap<>();
+
     for (WalletHistoryResult walletHistoryResult : walletHistoryResults) {
 
       String isProfit = "color:red;";
@@ -245,7 +251,7 @@ public class MailService {
           .append(walletHistoryResult.getCurrency())
           .append("</td>")
           .append("<td style='text-align: center; font-weight:bold; text-decoration:underline;")
-          .append(isProfit)
+          .append(resultColor)
           .append("'>")
           .append(walletHistoryResult.getProfitOrLoss())
           .append("</td>")
@@ -261,9 +267,58 @@ public class MailService {
           .append(walletHistoryResult.getResult())
           .append("</td>")
           .append("</tr>");
-    }
 
+      // Accumulate profit results for ranking
+      profitRanking.put(walletHistoryResult.getNickname(),
+          profitRanking.getOrDefault(walletHistoryResult.getNickname(), 0.0)
+              + Double.parseDouble(
+              walletHistoryResult.getResult().replace("$", "").replace(",", "")));
+
+      // Accumulate profit counts for ranking
+      int count = profitCountRanking.getOrDefault(walletHistoryResult.getNickname(), 0);
+      if (walletHistoryResult.getProfitOrLoss().equals("profit")) {
+        count++;
+      } else {
+        count--;
+      }
+      profitCountRanking.put(walletHistoryResult.getNickname(), count);
+    }
     htmlContent.append("</table>");
+
+    // Adding Profit Ranking section
+    htmlContent.append("<h2>Profit Ranking</h2>");
+    htmlContent.append("<ol>");
+    profitRanking.entrySet().stream()
+        .sorted((entry1, entry2) -> Double.compare(entry2.getValue(), entry1.getValue()))
+        .forEach(entry -> {
+          String color = entry.getValue() >= 0 ? "#32CD32" : "blue";
+          htmlContent.append("<li style='font-weight:bold; color:")
+              .append(color)
+              .append("'>")
+              .append(entry.getKey())
+              .append(" : $")
+              .append(String.format("%,.4f", entry.getValue()))
+              .append("</li>");
+        });
+    htmlContent.append("</ol>");
+
+// Adding Profit Count Ranking section
+    htmlContent.append("<h2>Profit Count Ranking</h2>");
+    htmlContent.append("<ol>");
+    profitCountRanking.entrySet().stream()
+        .sorted((entry1, entry2) -> Integer.compare(entry2.getValue(), entry1.getValue()))
+        .forEach(entry -> {
+          String color = entry.getValue() >= 0 ? "#32CD32" : "blue";
+          htmlContent.append("<li style='font-weight:bold; color:")
+              .append(color)
+              .append("'>")
+              .append(entry.getKey())
+              .append(" : ")
+              .append(entry.getValue())
+              .append("</li>");
+        });
+    htmlContent.append("</ol>");
+
     htmlContent.append("</body></html>");
     return htmlContent.toString();
   }
