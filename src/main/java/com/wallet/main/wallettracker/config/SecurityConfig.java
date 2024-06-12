@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -39,7 +40,9 @@ public class SecurityConfig {
             .anyRequest().permitAll()  // 그 외 요청은 모두 허용 (호출할 메소드가 없으니..)
         )
         .httpBasic(httpBasicCustomizer -> httpBasicCustomizer.realmName(
-            "Wallet-Tracker"));  // HTTP 기본 인증 사용
+            "Wallet-Tracker")) // HTTP 기본 인증 사용
+        .addFilterBefore(new CustomRequestValidationFilter(),
+            UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
@@ -57,7 +60,7 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();  // BCryptPasswordEncoder를 사용
-    // 하하
   }
+
 
 }
