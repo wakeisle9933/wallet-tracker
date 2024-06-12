@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -197,6 +198,100 @@ public class MailService {
     htmlContent.append("</table>");
     htmlContent.append("</body></html>");
     return htmlContent.toString();
+  }
+
+  public String createTradeReportHTML(List<WalletHistoryResult> walletHistoryResults, String name) {
+    StringBuilder htmlContent = new StringBuilder();
+    htmlContent.append("<html><body>")
+        .append("<h2>")
+        .append(name)
+        .append(" - ")
+        .append(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
+        .append("</h2>");
+
+    htmlContent.append("<table border='1' cellpadding='5'>");
+    htmlContent.append(
+        "<tr>"
+            + "<th>date</th>"
+            + "<th>Chain</th>"
+            + "<th>Nickname</th>"
+            + "<th>Currency</th>"
+            + "<th>profit/lose</th>"
+            + "<th>total investment</th>"
+            + "<th>total profit</th>"
+            + "<th>result</th>"
+            + "</tr>");
+
+    for (WalletHistoryResult walletHistoryResult : walletHistoryResults) {
+
+      String isProfit = "color:red;";
+      String resultColor = "color:#32CD32";
+      if (walletHistoryResult.getProfitOrLoss().equals("lose")) {
+        isProfit = "color:blue;";
+        resultColor = "color:blue;";
+      }
+
+      htmlContent.append("<tr>")
+          .append("<td style='text-align: center; font-weight:bold;'>")
+          .append(walletHistoryResult.getCreated_date())
+          .append("</td>")
+          .append("<td style='text-align: center; font-weight:bold;'>")
+          .append(walletHistoryResult.getChain())
+          .append("</td>")
+          .append("<td>")
+          .append(walletHistoryResult.getNickname())
+          .append("</td>")
+          .append("<td>")
+          .append(walletHistoryResult.getCurrency())
+          .append("</td>")
+          .append("<td style='text-align: center; font-weight:bold; text-decoration:underline;")
+          .append(isProfit)
+          .append("'>")
+          .append(walletHistoryResult.getProfitOrLoss())
+          .append("</td>")
+          .append("<td style='text-align: right; color: red; font-weight:bold;'>")
+          .append(walletHistoryResult.getTotal_investment())
+          .append("</td>")
+          .append("<td style='text-align: right; color: #32CD32; font-weight:bold;'>")
+          .append(walletHistoryResult.getTotal_profit())
+          .append("</td>")
+          .append("<td style='text-align: right; font-weight:bold; text-decoration:underline;")
+          .append(resultColor)
+          .append("'>")
+          .append(walletHistoryResult.getResult())
+          .append("</td>")
+          .append("</tr>");
+    }
+
+    htmlContent.append("</table>");
+    htmlContent.append("</body></html>");
+    return htmlContent.toString();
+  }
+
+  public void sendDailyTradeSummaryReport()
+      throws MessagingException, FileNotFoundException {
+    LocalDate today = LocalDate.now();
+    String fromDate = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    String toDate = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+    List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
+        fromDate, toDate);
+
+    // 닉네임과 id를 기준으로 정렬
+    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+        .sorted((a, b) -> {
+          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+          if (nicknameComparison != 0) {
+            return nicknameComparison;
+          } else {
+            return a.getId().compareTo(b.getId());
+          }
+        })
+        .toList();
+
+    String dailyTradingReport = createTradeReportHTML(sortedResultList, "Daily Trading Report");
+    sendMail(MailModel.builder().subject("Daily Trading Report").htmlContent(dailyTradingReport)
+        .build());
   }
 
 

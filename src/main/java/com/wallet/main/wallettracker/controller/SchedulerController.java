@@ -2,6 +2,7 @@ package com.wallet.main.wallettracker.controller;
 
 
 import com.wallet.main.wallettracker.config.SchedulerConfig;
+import com.wallet.main.wallettracker.service.WalletHistoryResultService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SchedulerController {
 
   private final SchedulerConfig schedulerConfig;
+  private final WalletHistoryResultService walletHistoryResultService;
 
   @GetMapping("/status")
   public ResponseEntity<String> checkSchedulerState() {
@@ -37,4 +39,5 @@ public class SchedulerController {
     schedulerConfig.setSchedulerEnabled(false);
     return ResponseEntity.ok("Scheduler is stopped");
   }
+
 }
