@@ -19,8 +19,24 @@ public class WalletHistoryResultController {
   @GetMapping("/send-daily-trade-summary")
   public ResponseEntity<String> sendDailyTradeSummaryReport()
       throws MessagingException, FileNotFoundException {
-    String status = "sendDailyTradeSummaryReport executed successfully";
+    String status = "send Daily Trade Summary Report executed successfully";
     mailService.sendDailyTradeSummaryReport();
+    return ResponseEntity.ok(status);
+  }
+
+  @GetMapping("/send-weekly-trade-summary")
+  public ResponseEntity<String> sendWeeklyTradeSummaryReport()
+      throws MessagingException, FileNotFoundException {
+    String status = "send Weekly Trade Summary Report executed successfully";
+    mailService.sendWeeklyTradeSummaryReport();
+    return ResponseEntity.ok(status);
+  }
+
+  @GetMapping("/send-monthly-trade-summary")
+  public ResponseEntity<String> sendMonthlyTradeSummaryReport()
+      throws MessagingException, FileNotFoundException {
+    String status = "send Monthly Trade Summary Report executed successfully";
+    mailService.sendMonthlyTradeSummaryReport();
     return ResponseEntity.ok(status);
   }
 

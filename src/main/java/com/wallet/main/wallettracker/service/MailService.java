@@ -349,6 +349,61 @@ public class MailService {
         .build());
   }
 
+  public void sendWeeklyTradeSummaryReport()
+      throws MessagingException, FileNotFoundException {
+    LocalDate today = LocalDate.now();
+    LocalDate monday = today.minusDays(6);
+    String fromDate = monday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    String toDate = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+    List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
+        fromDate, toDate);
+
+    // 닉네임과 id를 기준으로 정렬
+    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+        .sorted((a, b) -> {
+          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+          if (nicknameComparison != 0) {
+            return nicknameComparison;
+          } else {
+            return a.getId().compareTo(b.getId());
+          }
+        })
+        .toList();
+
+    String dailyTradingReport = createTradeReportHTML(sortedResultList, "Weekly Trading Report");
+    sendMail(MailModel.builder().subject("Weekly Trading Report").htmlContent(dailyTradingReport)
+        .build());
+  }
+
+  public void sendMonthlyTradeSummaryReport() throws MessagingException, FileNotFoundException {
+    LocalDate today = LocalDate.now();
+    LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+    LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
+
+    String fromDate = firstDayOfMonth.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    String toDate = lastDayOfMonth.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+    List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
+        fromDate, toDate);
+
+    // 닉네임과 id를 기준으로 정렬
+    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+        .sorted((a, b) -> {
+          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+          if (nicknameComparison != 0) {
+            return nicknameComparison;
+          } else {
+            return a.getId().compareTo(b.getId());
+          }
+        })
+        .toList();
+
+    String monthlyTradingReport = createTradeReportHTML(sortedResultList, "Monthly Trading Report");
+    sendMail(MailModel.builder().subject("Monthly Trading Report").htmlContent(monthlyTradingReport)
+        .build());
+  }
+
 
   public void sendMail(MailModel model) throws FileNotFoundException, MessagingException {
     File file = new File(FilePathConstants.EMAIL_PATH);
