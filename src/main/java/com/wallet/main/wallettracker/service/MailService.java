@@ -23,12 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MailService {
 
   private final JavaMailSender mailSender;
@@ -373,21 +375,26 @@ public class MailService {
     List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
         fromDate, toDate);
 
-    // 닉네임과 id를 기준으로 정렬
-    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
-        .sorted((a, b) -> {
-          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
-          if (nicknameComparison != 0) {
-            return nicknameComparison;
-          } else {
-            return a.getId().compareTo(b.getId());
-          }
-        })
-        .toList();
+    if (!walletHistoryResults.isEmpty()) {
+      // 닉네임과 id를 기준으로 정렬
+      List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+          .sorted((a, b) -> {
+            int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+            if (nicknameComparison != 0) {
+              return nicknameComparison;
+            } else {
+              return a.getId().compareTo(b.getId());
+            }
+          })
+          .toList();
 
-    String dailyTradingReport = createTradeReportHTML(sortedResultList, "Daily Trading Report");
-    sendMail(MailModel.builder().subject("Daily Trading Report").htmlContent(dailyTradingReport)
-        .build());
+      String dailyTradingReport = createTradeReportHTML(sortedResultList, "Daily Trading Report");
+      sendMail(MailModel.builder().subject("Daily Trading Report").htmlContent(dailyTradingReport)
+          .build());
+    } else {
+      log.info(
+          "sendDailyTradeSummaryReport does not function because there are no results from the query");
+    }
   }
 
   public void sendWeeklyTradeSummaryReport()
@@ -400,24 +407,29 @@ public class MailService {
     List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
         fromDate, toDate);
 
-    // 닉네임과 id를 기준으로 정렬
-    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
-        .sorted((a, b) -> {
-          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
-          if (nicknameComparison != 0) {
-            return nicknameComparison;
-          } else {
-            return a.getId().compareTo(b.getId());
-          }
-        })
-        .toList();
+    if (!walletHistoryResults.isEmpty()) {
+      // 닉네임과 id를 기준으로 정렬
+      List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+          .sorted((a, b) -> {
+            int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+            if (nicknameComparison != 0) {
+              return nicknameComparison;
+            } else {
+              return a.getId().compareTo(b.getId());
+            }
+          })
+          .toList();
 
-    String tradingReportTitle =
-        "Weekly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
-            + StringUtil.formatDateWithSlashes(toDate) + ")";
-    String dailyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
-    sendMail(MailModel.builder().subject("Weekly Trading Report").htmlContent(dailyTradingReport)
-        .build());
+      String tradingReportTitle =
+          "Weekly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
+              + StringUtil.formatDateWithSlashes(toDate) + ")";
+      String dailyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
+      sendMail(MailModel.builder().subject("Weekly Trading Report").htmlContent(dailyTradingReport)
+          .build());
+    } else {
+      log.info(
+          "sendWeeklyTradeSummaryReport does not function because there are no results from the query");
+    }
   }
 
   public void sendMonthlyTradeSummaryReport() throws MessagingException, FileNotFoundException {
@@ -431,24 +443,31 @@ public class MailService {
     List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
         fromDate, toDate);
 
-    // 닉네임과 id를 기준으로 정렬
-    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
-        .sorted((a, b) -> {
-          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
-          if (nicknameComparison != 0) {
-            return nicknameComparison;
-          } else {
-            return a.getId().compareTo(b.getId());
-          }
-        })
-        .toList();
+    if (!walletHistoryResults.isEmpty()) {
+      // 닉네임과 id를 기준으로 정렬
+      List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+          .sorted((a, b) -> {
+            int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+            if (nicknameComparison != 0) {
+              return nicknameComparison;
+            } else {
+              return a.getId().compareTo(b.getId());
+            }
+          })
+          .toList();
 
-    String tradingReportTitle =
-        "Monthly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
-            + StringUtil.formatDateWithSlashes(toDate) + ")";
-    String monthlyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
-    sendMail(MailModel.builder().subject("Monthly Trading Report").htmlContent(monthlyTradingReport)
-        .build());
+      String tradingReportTitle =
+          "Monthly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
+              + StringUtil.formatDateWithSlashes(toDate) + ")";
+      String monthlyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
+      sendMail(
+          MailModel.builder().subject("Monthly Trading Report").htmlContent(monthlyTradingReport)
+              .build());
+    } else {
+      log.info(
+          "sendMonthlyTradeSummaryReport does not function because there are no results from the query");
+    }
+
   }
 
   public void sendTradeSummaryReportByDateRange(String fromDateStr, String toDateStr)
@@ -456,24 +475,30 @@ public class MailService {
     List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
         fromDateStr, toDateStr);
 
-    // 닉네임과 id를 기준으로 정렬
-    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
-        .sorted((a, b) -> {
-          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
-          if (nicknameComparison != 0) {
-            return nicknameComparison;
-          } else {
-            return a.getId().compareTo(b.getId());
-          }
-        })
-        .toList();
+    if (!walletHistoryResults.isEmpty()) {
+      // 닉네임과 id를 기준으로 정렬
+      List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+          .sorted((a, b) -> {
+            int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+            if (nicknameComparison != 0) {
+              return nicknameComparison;
+            } else {
+              return a.getId().compareTo(b.getId());
+            }
+          })
+          .toList();
 
-    String tradingReportTitle =
-        "Non-Regular  Report (" + StringUtil.formatDateWithSlashes(fromDateStr) +
-            " ~ " + StringUtil.formatDateWithSlashes(toDateStr) + ")";
-    String tradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
-    sendMail(MailModel.builder().subject(tradingReportTitle).htmlContent(tradingReport)
-        .build());
+      String tradingReportTitle =
+          "Non-Regular  Report (" + StringUtil.formatDateWithSlashes(fromDateStr) +
+              " ~ " + StringUtil.formatDateWithSlashes(toDateStr) + ")";
+      String tradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
+      sendMail(MailModel.builder().subject(tradingReportTitle).htmlContent(tradingReport)
+          .build());
+    } else {
+      log.info(
+          "sendTradeSummaryReportByDateRange does not function because there are no results from the query");
+    }
+
   }
 
 
