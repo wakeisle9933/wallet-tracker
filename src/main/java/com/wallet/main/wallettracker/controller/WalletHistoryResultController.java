@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -37,6 +38,16 @@ public class WalletHistoryResultController {
       throws MessagingException, FileNotFoundException {
     String status = "send Monthly Trade Summary Report executed successfully";
     mailService.sendMonthlyTradeSummaryReport();
+    return ResponseEntity.ok(status);
+  }
+
+  @GetMapping("/send-trade-summary-by-date-range")
+  public ResponseEntity<String> sendTradeSummaryReportByDateRange(
+      @RequestParam("fromDate") String fromDate,
+      @RequestParam("toDate") String toDate)
+      throws MessagingException, FileNotFoundException {
+    String status = "send Monthly Trade Summary Report executed successfully";
+    mailService.sendTradeSummaryReportByDateRange(fromDate, toDate);
     return ResponseEntity.ok(status);
   }
 

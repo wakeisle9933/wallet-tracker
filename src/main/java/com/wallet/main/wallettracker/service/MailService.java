@@ -4,6 +4,7 @@ import com.wallet.main.wallettracker.entity.WalletHistory;
 import com.wallet.main.wallettracker.entity.WalletHistoryResult;
 import com.wallet.main.wallettracker.model.HotPairModel;
 import com.wallet.main.wallettracker.model.MailModel;
+import com.wallet.main.wallettracker.util.DoubleUtil;
 import com.wallet.main.wallettracker.util.FilePathConstants;
 import com.wallet.main.wallettracker.util.StatusConstants;
 import com.wallet.main.wallettracker.util.StringUtil;
@@ -208,9 +209,12 @@ public class MailService {
     htmlContent.append("<html><body>")
         .append("<h2>")
         .append(name)
-        .append(" - ")
+        .append("</h2>")
+        .append("\n")
+        .append("<h3>")
+        .append("Generated on: ")
         .append(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")))
-        .append("</h2>");
+        .append("</h3>");
 
     htmlContent.append("<table border='1' cellpadding='5'>");
     htmlContent.append(
@@ -226,7 +230,11 @@ public class MailService {
             + "</tr>");
 
     Map<String, Double> profitRanking = new HashMap<>();
+    Map<String, Double> totalInvestMap = new HashMap<>();
+    Map<String, Double> totalResultMap = new HashMap<>();
     Map<String, Integer> profitCountRanking = new HashMap<>();
+    Map<String, Integer> profitCountByNickname = new HashMap<>();
+    Map<String, Integer> totalCountByNickname = new HashMap<>();
 
     for (WalletHistoryResult walletHistoryResult : walletHistoryResults) {
 
@@ -274,13 +282,28 @@ public class MailService {
               + Double.parseDouble(
               walletHistoryResult.getResult().replace("$", "").replace(",", "")));
 
+      totalInvestMap.put(walletHistoryResult.getNickname(),
+          totalInvestMap.getOrDefault(walletHistoryResult.getNickname(), 0.0)
+              + Double.parseDouble(
+              walletHistoryResult.getTotal_investment().replace("$", "").replace(",", "")));
+
+      totalResultMap.put(walletHistoryResult.getNickname(),
+          totalResultMap.getOrDefault(walletHistoryResult.getNickname(), 0.0)
+              + Double.parseDouble(
+              walletHistoryResult.getTotal_profit().replace("$", "").replace(",", "")));
+
       // Accumulate profit counts for ranking
       int count = profitCountRanking.getOrDefault(walletHistoryResult.getNickname(), 0);
+      int totalCount = totalCountByNickname.getOrDefault(walletHistoryResult.getNickname(), 0);
+      int profitCount = profitCountByNickname.getOrDefault(walletHistoryResult.getNickname(), 0);
       if (walletHistoryResult.getProfitOrLoss().equals("profit")) {
         count++;
+        profitCountByNickname.put(walletHistoryResult.getNickname(), profitCount + 1);
       } else {
         count--;
+        profitCountByNickname.put(walletHistoryResult.getNickname(), profitCount);
       }
+      totalCountByNickname.put(walletHistoryResult.getNickname(), totalCount + 1);
       profitCountRanking.put(walletHistoryResult.getNickname(), count);
     }
     htmlContent.append("</table>");
@@ -292,29 +315,47 @@ public class MailService {
         .sorted((entry1, entry2) -> Double.compare(entry2.getValue(), entry1.getValue()))
         .forEach(entry -> {
           String color = entry.getValue() >= 0 ? "#32CD32" : "blue";
+          String nickname = entry.getKey();
+          double totalInvest = totalInvestMap.getOrDefault(nickname, 0.0);
+          double totalResult = totalResultMap.getOrDefault(nickname, 0.0);
+          String roi = DoubleUtil.calculateROI(totalInvest, totalResult);
           htmlContent.append("<li style='font-weight:bold; color:")
               .append(color)
               .append("'>")
               .append(entry.getKey())
               .append(" : $")
               .append(String.format("%,.4f", entry.getValue()))
+              .append(" (ROI : ")
+              .append(roi)
+              .append(")")
               .append("</li>");
         });
     htmlContent.append("</ol>");
 
-// Adding Profit Count Ranking section
+    // Adding Profit Count Ranking section
     htmlContent.append("<h2>Profit Count Ranking</h2>");
     htmlContent.append("<ol>");
     profitCountRanking.entrySet().stream()
         .sorted((entry1, entry2) -> Integer.compare(entry2.getValue(), entry1.getValue()))
         .forEach(entry -> {
-          String color = entry.getValue() >= 0 ? "#32CD32" : "blue";
+          String color = profitCountRanking.get(entry.getKey()) >= 0 ? "#32CD32" : "blue";
+          double profitRatio =
+              (double) profitCountByNickname.get(entry.getKey()) / totalCountByNickname.get(
+                  entry.getKey()) * 100;
           htmlContent.append("<li style='font-weight:bold; color:")
               .append(color)
               .append("'>")
               .append(entry.getKey())
-              .append(" : ")
-              .append(entry.getValue())
+              .append(" - Profit Score : ")
+              .append(profitCountRanking.get(entry.getKey()))
+              .append(" (Profit Count: ")
+              .append(profitCountByNickname.get(entry.getKey()))
+              .append(" / Total Trade: ")
+              .append(totalCountByNickname.get(entry.getKey()))
+              .append(" / Profit Ratio: ")
+              .append(String.format("%.2f", profitRatio))
+              .append("%")
+              .append(")")
               .append("</li>");
         });
     htmlContent.append("</ol>");
@@ -371,7 +412,10 @@ public class MailService {
         })
         .toList();
 
-    String dailyTradingReport = createTradeReportHTML(sortedResultList, "Weekly Trading Report");
+    String tradingReportTitle =
+        "Weekly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
+            + StringUtil.formatDateWithSlashes(toDate) + ")";
+    String dailyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
     sendMail(MailModel.builder().subject("Weekly Trading Report").htmlContent(dailyTradingReport)
         .build());
   }
@@ -399,8 +443,36 @@ public class MailService {
         })
         .toList();
 
-    String monthlyTradingReport = createTradeReportHTML(sortedResultList, "Monthly Trading Report");
+    String tradingReportTitle =
+        "Monthly Trading Report (" + StringUtil.formatDateWithSlashes(fromDate) + " ~ "
+            + StringUtil.formatDateWithSlashes(toDate) + ")";
+    String monthlyTradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
     sendMail(MailModel.builder().subject("Monthly Trading Report").htmlContent(monthlyTradingReport)
+        .build());
+  }
+
+  public void sendTradeSummaryReportByDateRange(String fromDateStr, String toDateStr)
+      throws MessagingException, FileNotFoundException {
+    List<WalletHistoryResult> walletHistoryResults = walletHistoryResultService.findByDateRange(
+        fromDateStr, toDateStr);
+
+    // 닉네임과 id를 기준으로 정렬
+    List<WalletHistoryResult> sortedResultList = walletHistoryResults.stream()
+        .sorted((a, b) -> {
+          int nicknameComparison = a.getNickname().compareTo(b.getNickname());
+          if (nicknameComparison != 0) {
+            return nicknameComparison;
+          } else {
+            return a.getId().compareTo(b.getId());
+          }
+        })
+        .toList();
+
+    String tradingReportTitle =
+        "Non-Regular  Report (" + StringUtil.formatDateWithSlashes(fromDateStr) +
+            " ~ " + StringUtil.formatDateWithSlashes(toDateStr) + ")";
+    String tradingReport = createTradeReportHTML(sortedResultList, tradingReportTitle);
+    sendMail(MailModel.builder().subject(tradingReportTitle).htmlContent(tradingReport)
         .build());
   }
 
