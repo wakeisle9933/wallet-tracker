@@ -83,6 +83,12 @@ public class MoralisService {
         name = jsonObject.getString("name") + " (" + jsonObject.getString("symbol") + ")";
         String balance = StringUtil.convertBalanceToString(jsonObject.getString("balance"),
             jsonObject.getInt("decimals"));
+
+        // ignore dust
+        if (Double.parseDouble(balance) < 0.0000001) {
+          continue;
+        }
+
         String tokenAddress = jsonObject.getString("token_address");
 
         if (!FilterKeywordUtil.containsFilterKeyword(name)) {
