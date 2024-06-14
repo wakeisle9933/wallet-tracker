@@ -63,6 +63,16 @@ public class MainScheduler {
     }
   }
 
+  // 매주 일요일 저녁 11시에 수행
+  @Scheduled(cron = "0 0 23 ? * SUN")
+  public void sendWeeklyTradeSummaryReport() throws IOException, MessagingException {
+    if (schedulerConfig.isSchedulerEnabled()) {
+      mailService.sendWeeklyTradeSummaryReport();
+    } else {
+      log.info("Weekly Trade Summary Report will not be sent -  The scheduler is currently down");
+    }
+  }
+
   // 매월 말일 저녁 11시에 수행
   @Scheduled(cron = "0 0 23 L * ?")
   public void sendMonthlyTradeSummaryReport() throws IOException, MessagingException {

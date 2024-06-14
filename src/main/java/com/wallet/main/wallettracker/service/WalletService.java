@@ -452,7 +452,7 @@ public class WalletService {
     // HTML 템플릿 생성
     StringBuilder htmlContent = new StringBuilder();
     htmlContent.append("<html><body>");
-    htmlContent.append("<h2>10Minute Wallet Checker</h2>");
+    htmlContent.append("<h2>5Minute Wallet Checker</h2>");
 
     for (BaseResultModel baseResultModel : baseResultModelList) {
       if (!baseResultModel.getBaseCompareModelList().isEmpty()) {
@@ -628,7 +628,7 @@ public class WalletService {
             String tokenSnifferUrl = "https://tokensniffer.com/token/" + tokenSnifferId + "/"
                 + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
-              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
+              htmlContent.append("<td style='text-align: center;><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
                   .append("</a></td>")
                   .append("<td><a href=\"").append(tokenSnifferUrl)
@@ -654,7 +654,7 @@ public class WalletService {
     htmlContent.append("</body></html>");
 
     mailService.sendMail(
-        MailModel.builder().subject("10Minute Wallet Checker")
+        MailModel.builder().subject("5Minute Wallet Checker")
             .htmlContent(htmlContent.toString()).build());
   }
 
