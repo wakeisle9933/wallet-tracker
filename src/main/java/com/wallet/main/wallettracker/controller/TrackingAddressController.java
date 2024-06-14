@@ -39,7 +39,7 @@ public class TrackingAddressController {
 
   @PostMapping("/add-address")
   public ResponseEntity<String> requestAddAddressToFile(@RequestBody AddressDto addressDto) {
-    boolean isAdded = resourceAddressService.addAddressToFile(addressDto);
+    boolean isAdded = resourceAddressService.addAddress(addressDto);
 
     if (isAdded) {
       return ResponseEntity.ok("Address added successfully.");

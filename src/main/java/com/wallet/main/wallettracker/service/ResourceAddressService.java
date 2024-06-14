@@ -38,7 +38,7 @@ public class ResourceAddressService {
     }
   }
 
-  public boolean addAddressToFile(AddressDto addressDto) {
+  public boolean addAddress(AddressDto addressDto) {
     TrackingAddress byChainAndAddress = repository.findByChainAndAddress(addressDto.getChain(),
         addressDto.getAddress());
     if (byChainAndAddress == null) {
@@ -67,6 +67,12 @@ public class ResourceAddressService {
   public boolean removeAllAddress() {
     repository.deleteAll();
     return true;
+  }
+
+  @Transactional
+  public int saveAll(List<TrackingAddress> trackingAddresses) {
+    List<TrackingAddress> savedList = repository.saveAll(trackingAddresses);
+    return savedList.size();
   }
 
 }

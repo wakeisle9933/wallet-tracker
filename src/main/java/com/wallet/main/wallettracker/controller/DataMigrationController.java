@@ -2,11 +2,13 @@ package com.wallet.main.wallettracker.controller;
 
 import com.wallet.main.wallettracker.entity.BlacklistToken;
 import com.wallet.main.wallettracker.entity.ChainMapping;
+import com.wallet.main.wallettracker.entity.TrackingAddress;
 import com.wallet.main.wallettracker.entity.WalletHistory;
 import com.wallet.main.wallettracker.entity.WalletHistoryResult;
 import com.wallet.main.wallettracker.entity.WhitelistToken;
 import com.wallet.main.wallettracker.service.BlacklistTokenService;
 import com.wallet.main.wallettracker.service.ChainMappingService;
+import com.wallet.main.wallettracker.service.ResourceAddressService;
 import com.wallet.main.wallettracker.service.WalletHistoryResultService;
 import com.wallet.main.wallettracker.service.WalletHistoryService;
 import com.wallet.main.wallettracker.service.WhitelistTokenService;
@@ -31,6 +33,7 @@ public class DataMigrationController {
   private final BlacklistTokenService blacklistTokenService;
   private final WalletHistoryResultService walletHistoryResultService;
   private final ChainMappingService chainMappingService;
+  private final ResourceAddressService resourceAddressService;
 
   @GetMapping("/export/walletHistory")
   public ResponseEntity<?> exportWalletHistories(
@@ -75,7 +78,18 @@ public class DataMigrationController {
     } catch (Exception e) {
       log.error("Failed to export Wallet History Result", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Failed to Export Wallet History Result");
+          .body("Failed to export Wallet History Result");
+    }
+  }
+
+  @GetMapping("/export/trackingAddress")
+  public ResponseEntity<?> requestShowAddressContents() {
+    try {
+      return ResponseEntity.ok(resourceAddressService.showAddressContents());
+    } catch (Exception e) {
+      log.error("Failed to export tracking address", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to export tracking address");
     }
   }
 
@@ -152,6 +166,19 @@ public class DataMigrationController {
       log.error("Failed to import ChainMapping result", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Failed to Import ChainMapping result");
+    }
+  }
+
+  @PostMapping("/import/trackingAddress")
+  public ResponseEntity<?> importTrackingAddress(
+      @RequestBody List<TrackingAddress> trackingAddresses) {
+    try {
+      int savedSize = resourceAddressService.saveAll(trackingAddresses);
+      return ResponseEntity.ok(savedSize + " Tracking Addresses imported successfully");
+    } catch (Exception e) {
+      log.error("Failed to import Tracking Addresses", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to Import Tracking Addresses");
     }
   }
 
