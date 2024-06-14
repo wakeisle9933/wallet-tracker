@@ -593,7 +593,7 @@ public class WalletService {
               htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
                   .append("</a></td>")
-                  .append("<td><a href=\"").append(tokenSnifferUrl)
+                  .append("<td style='text-align: center;'><a href=\"").append(tokenSnifferUrl)
                   .append("\" target=\"_blank\">").append("Link")
                   .append("</a></td>");
             } else {
@@ -628,10 +628,10 @@ public class WalletService {
             String tokenSnifferUrl = "https://tokensniffer.com/token/" + tokenSnifferId + "/"
                 + baseCompareModel.getContractAddress();
             if (!baseCompareModel.getContractAddress().equals(StringConstants.BASE_ETH_ADDRESS)) {
-              htmlContent.append("<td style='text-align: center;><a href=\"").append(dexToolsUrl)
+              htmlContent.append("<td><a href=\"").append(dexToolsUrl)
                   .append("\" target=\"_blank\">").append(baseCompareModel.getContractAddress())
                   .append("</a></td>")
-                  .append("<td><a href=\"").append(tokenSnifferUrl)
+                  .append("<td style='text-align: center;'><a href=\"").append(tokenSnifferUrl)
                   .append("\" target=\"_blank\">").append("Link")
                   .append("</a></td>");
             } else {
