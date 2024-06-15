@@ -109,6 +109,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100; // 배치 크기 설정
+
+      for (WalletHistory walletHistory : walletHistories) {
+        walletHistory.setId(null);
+      }
+
       for (int i = 0; i < walletHistories.size(); i += batchSize) {
         int end = Math.min(i + batchSize, walletHistories.size());
         List<WalletHistory> batch = walletHistories.subList(i, end);
@@ -128,6 +133,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100;
+
+      for (BlacklistToken blacklistToken : blacklistTokens) {
+        blacklistToken.setId(null);
+      }
+
       for (int i = 0; i < blacklistTokens.size(); i += batchSize) {
         int end = Math.min(i + batchSize, blacklistTokens.size());
         List<BlacklistToken> batch = blacklistTokens.subList(i, end);
@@ -147,6 +157,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100;
+
+      for (WhitelistToken whitelistToken : whitelistTokens) {
+        whitelistToken.setId(null);
+      }
+
       for (int i = 0; i < whitelistTokens.size(); i += batchSize) {
         int end = Math.min(i + batchSize, whitelistTokens.size());
         List<WhitelistToken> batch = whitelistTokens.subList(i, end);
@@ -166,6 +181,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100;
+
+      for (WalletHistoryResult walletHistoryResult : walletHistoryResults) {
+        walletHistoryResult.setId(null);
+      }
+
       for (int i = 0; i < walletHistoryResults.size(); i += batchSize) {
         int end = Math.min(i + batchSize, walletHistoryResults.size());
         List<WalletHistoryResult> batch = walletHistoryResults.subList(i, end);
@@ -184,6 +204,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100;
+
+      for (ChainMapping chainMapping : chainMappings) {
+        chainMapping.setId(null);
+      }
+
       for (int i = 0; i < chainMappings.size(); i += batchSize) {
         int end = Math.min(i + batchSize, chainMappings.size());
         List<ChainMapping> batch = chainMappings.subList(i, end);
@@ -203,6 +228,11 @@ public class DataMigrationController {
     try {
       int totalSaved = 0;
       int batchSize = 100;
+
+      for (TrackingAddress trackingAddress : trackingAddresses) {
+        trackingAddress.setId(null);
+      }
+      
       for (int i = 0; i < trackingAddresses.size(); i += batchSize) {
         int end = Math.min(i + batchSize, trackingAddresses.size());
         List<TrackingAddress> batch = trackingAddresses.subList(i, end);
