@@ -128,7 +128,7 @@ public class MailService {
 
     walletHistoryResultService.save(
         WalletHistoryResult.builder()
-            .chain("address")
+            .chain(walletHistoryList.getFirst().getChain())
             .address(walletHistoryList.getFirst().getAddress())
             .nickname(walletHistoryList.getFirst().getNickname())
             .currency(walletHistoryList.getFirst().getCurrency())
