@@ -105,11 +105,16 @@ public class DataMigrationController {
   }
 
   @PostMapping("/import/walletHistory")
-  public ResponseEntity<?> importWalletHistories(
-      @RequestBody List<WalletHistory> walletHistories) {
+  public ResponseEntity<?> importWalletHistories(@RequestBody List<WalletHistory> walletHistories) {
     try {
-      int savedSize = walletHistoryService.saveAllWalletHistories(walletHistories);
-      return ResponseEntity.ok(savedSize + " WalletHistory imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100; // 배치 크기 설정
+      for (int i = 0; i < walletHistories.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, walletHistories.size());
+        List<WalletHistory> batch = walletHistories.subList(i, end);
+        totalSaved += walletHistoryService.saveAllWalletHistories(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " WalletHistory imported successfully");
     } catch (Exception e) {
       log.error("Failed to import walletHistory", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -121,8 +126,14 @@ public class DataMigrationController {
   public ResponseEntity<?> importBlacklistTokens(
       @RequestBody List<BlacklistToken> blacklistTokens) {
     try {
-      int savedSize = blacklistTokenService.saveAllBlacklistTokens(blacklistTokens);
-      return ResponseEntity.ok(savedSize + " Blacklist Tokens imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100;
+      for (int i = 0; i < blacklistTokens.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, blacklistTokens.size());
+        List<BlacklistToken> batch = blacklistTokens.subList(i, end);
+        totalSaved += blacklistTokenService.saveAllBlacklistTokens(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " Blacklist Tokens imported successfully");
     } catch (Exception e) {
       log.error("Failed to import blacklist tokens", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -134,8 +145,14 @@ public class DataMigrationController {
   public ResponseEntity<?> importWhitelistTokens(
       @RequestBody List<WhitelistToken> whitelistTokens) {
     try {
-      int savedSize = whitelistTokenService.saveAllBlacklistTokens(whitelistTokens);
-      return ResponseEntity.ok(savedSize + " Whitelist Tokens imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100;
+      for (int i = 0; i < whitelistTokens.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, whitelistTokens.size());
+        List<WhitelistToken> batch = whitelistTokens.subList(i, end);
+        totalSaved += whitelistTokenService.saveAllBlacklistTokens(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " Whitelist Tokens imported successfully");
     } catch (Exception e) {
       log.error("Failed to import whitelist tokens", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -145,10 +162,16 @@ public class DataMigrationController {
 
   @PostMapping("/import/walletHistoryResult")
   public ResponseEntity<?> importWalletHistoryResult(
-      @RequestBody List<WalletHistoryResult> whitelistTokens) {
+      @RequestBody List<WalletHistoryResult> walletHistoryResults) {
     try {
-      int savedSize = walletHistoryResultService.saveAllWalletHistoryResults(whitelistTokens);
-      return ResponseEntity.ok(savedSize + " Wallet History Result imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100;
+      for (int i = 0; i < walletHistoryResults.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, walletHistoryResults.size());
+        List<WalletHistoryResult> batch = walletHistoryResults.subList(i, end);
+        totalSaved += walletHistoryResultService.saveAllWalletHistoryResults(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " Wallet History Result imported successfully");
     } catch (Exception e) {
       log.error("Failed to import wallet history result", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -157,11 +180,16 @@ public class DataMigrationController {
   }
 
   @PostMapping("/import/chainMapping")
-  public ResponseEntity<?> importChainMapping(
-      @RequestBody List<ChainMapping> chainMappings) {
+  public ResponseEntity<?> importChainMapping(@RequestBody List<ChainMapping> chainMappings) {
     try {
-      int savedSize = chainMappingService.saveAllChainMapping(chainMappings);
-      return ResponseEntity.ok(savedSize + " ChainMapping Result imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100;
+      for (int i = 0; i < chainMappings.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, chainMappings.size());
+        List<ChainMapping> batch = chainMappings.subList(i, end);
+        totalSaved += chainMappingService.saveAllChainMapping(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " ChainMapping Result imported successfully");
     } catch (Exception e) {
       log.error("Failed to import ChainMapping result", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -173,8 +201,14 @@ public class DataMigrationController {
   public ResponseEntity<?> importTrackingAddress(
       @RequestBody List<TrackingAddress> trackingAddresses) {
     try {
-      int savedSize = resourceAddressService.saveAll(trackingAddresses);
-      return ResponseEntity.ok(savedSize + " Tracking Addresses imported successfully");
+      int totalSaved = 0;
+      int batchSize = 100;
+      for (int i = 0; i < trackingAddresses.size(); i += batchSize) {
+        int end = Math.min(i + batchSize, trackingAddresses.size());
+        List<TrackingAddress> batch = trackingAddresses.subList(i, end);
+        totalSaved += resourceAddressService.saveAll(batch);
+      }
+      return ResponseEntity.ok(totalSaved + " Tracking Addresses imported successfully");
     } catch (Exception e) {
       log.error("Failed to import Tracking Addresses", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
