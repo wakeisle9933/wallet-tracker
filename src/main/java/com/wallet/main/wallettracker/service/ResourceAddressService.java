@@ -43,7 +43,8 @@ public class ResourceAddressService {
         addressDto.getAddress());
     if (byChainAndAddress == null) {
       repository.save(
-          TrackingAddress.builder().chain(addressDto.getChain()).address(addressDto.getAddress())
+          TrackingAddress.builder().chain(addressDto.getChain())
+              .address(addressDto.getAddress().trim())
               .nickname(addressDto.getNickname())
               .description(addressDto.getDesc())
               .created_date(
